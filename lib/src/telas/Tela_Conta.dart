@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart'; 
 
 class TelaConta extends StatefulWidget {
   const TelaConta({super.key});
@@ -11,6 +14,57 @@ class TelaConta extends StatefulWidget {
 
 class _TelaContaState extends State<TelaConta> {
   PickedFile? _imagemSelecionada;
+  String nome = 'Carregando...';
+  String matricula = 'Carregando...';
+  String cargo = 'Carregando...';
+
+  @override
+  void initState() {
+    super.initState();
+    _buscarUsuario();
+  }
+
+  Future<void> _buscarUsuario() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? email = prefs.getString('usuario_email'); 
+    if (email == null) {
+      setState(() {
+        nome = 'Erro ao carregar';
+        matricula = 'Erro ao carregar';
+        cargo = 'Erro ao carregar';
+      });
+      return;
+    }
+
+    try {
+      final response = await http.get(Uri.parse('http://localhost:3001/usuario?email=$email'));
+
+      print('Status da resposta: ${response.statusCode}');
+      print('Corpo da resposta: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          nome = data['nome'];
+          matricula = data['matricula'];
+          cargo = data['cargo'];
+        });
+      } else {
+        setState(() {
+          nome = 'Erro ao carregar';
+          matricula = 'Erro ao carregar';
+          cargo = 'Erro ao carregar';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        nome = 'Erro ao carregar';
+        matricula = 'Erro ao carregar';
+        cargo = 'Erro ao carregar';
+      });
+      print('Erro ao buscar usuário: $e');
+    }
+  }
 
   Future<void> _trocarFotoPerfil() async {
     final picker = ImagePicker();
@@ -25,18 +79,18 @@ class _TelaContaState extends State<TelaConta> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, 
       appBar: AppBar(
         title: const Text('Minha Conta'),
-        backgroundColor: const Color(0xFF004AAD), // Cor azul do metrô
+        backgroundColor: const Color(0xFF004AAD),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Foto de perfil com animação de troca
             GestureDetector(
-              onTap: _trocarFotoPerfil, // Trocar foto ao clicar na imagem
+              onTap: _trocarFotoPerfil,
               child: Stack(
                 alignment: Alignment.bottomRight,
                 children: [
@@ -53,7 +107,6 @@ class _TelaContaState extends State<TelaConta> {
                           : const AssetImage('assets/images/default_profile.png') as ImageProvider,
                     ),
                   ),
-                  // Ícone para indicar troca de foto
                   CircleAvatar(
                     backgroundColor: Colors.white,
                     radius: 18,
@@ -75,17 +128,15 @@ class _TelaContaState extends State<TelaConta> {
               ),
             ),
             const SizedBox(height: 30),
-            // Informações do usuário com layout mais moderno
-            _buildInfoTile(Icons.person, 'Nome', 'Lucas Pereira'),
-            _buildInfoTile(Icons.work, 'Cargo', 'Operador de Trem'),
-            _buildInfoTile(Icons.badge, 'Matrícula', '123456'),
+            _buildInfoTile(Icons.person, 'Nome', nome),
+            _buildInfoTile(Icons.work, 'Cargo', cargo),
+            _buildInfoTile(Icons.badge, 'Matrícula', matricula),
           ],
         ),
       ),
     );
   }
 
-  // Widget de informações com ícones e novo layout
   Widget _buildInfoTile(IconData icon, String title, String info) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0),

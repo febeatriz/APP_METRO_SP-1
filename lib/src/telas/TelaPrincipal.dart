@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:mobilegestaoextintores/src/telas/Tela_RegistrarExtintorManual.dart';
-import 'tela_configuracao.dart'; // Importa o arquivo de configuração
+import 'tela_configuracao.dart';
 
 class TelaPrincipal extends StatelessWidget {
-  const TelaPrincipal({super.key});
+  final String nomeUsuario; 
+  const TelaPrincipal({super.key, required this.nomeUsuario});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Cor de fundo suave e neutra
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: const Color(0xFF004AAD), // Azul profissional do metrô
-        elevation: 0, // Remoção da sombra da AppBar
+        backgroundColor: const Color(0xFF004AAD),
+        elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Image.network(
-              'https://i.imgur.com/IZ8lRQK.png'), // Logo do metrô (ajustar URL da imagem conforme necessário)
+          child: Image.asset('assets/images/logo.jpeg',)
         ),
         title: const Text(
           'METRÔ DE SÃO PAULO',
@@ -25,20 +25,17 @@ class TelaPrincipal extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             child: Row(
               children: [
-                Icon(Icons.account_circle, color: Colors.white),
-                SizedBox(width: 5),
-                Text(
-                  'Olá, Lucas',
-                  style: TextStyle(color: Colors.white),
-                ),
+                const Icon(Icons.account_circle, color: Colors.white),
+                const SizedBox(width: 5),
+                Text('Olá, $nomeUsuario', style: const TextStyle(color: Colors.white)),
               ],
             ),
-          )
+          ),
         ],
       ),
       body: Padding(
@@ -46,9 +43,8 @@ class TelaPrincipal extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Caixa de descrição principal
             Container(
-              padding: const EdgeInsets.all(20), // Mais espaçamento
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
@@ -57,7 +53,7 @@ class TelaPrincipal extends StatelessWidget {
                     color: Colors.grey.withOpacity(0.15),
                     spreadRadius: 3,
                     blurRadius: 10,
-                    offset: const Offset(0, 5), // Sombra mais leve
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
@@ -80,7 +76,6 @@ class TelaPrincipal extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
-                  // Lista de funcionalidades
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -106,10 +101,8 @@ class TelaPrincipal extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            // Rodapé com ícones e textos como botões
             Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceEvenly, // Melhor alinhamento
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildIconButton(
                   icon: Icons.fire_extinguisher,
@@ -162,7 +155,6 @@ class TelaPrincipal extends StatelessWidget {
     );
   }
 
-  // Método para construir itens da lista de funcionalidades com marcadores
   Widget _buildBulletPoint(String text) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +171,6 @@ class TelaPrincipal extends StatelessWidget {
     );
   }
 
-  // Método para construir ícones com textos na parte inferior
   Widget _buildIconButton(
       {required IconData icon,
       required String label,
@@ -198,7 +189,7 @@ class TelaPrincipal extends StatelessWidget {
                   color: Colors.black.withOpacity(0.2),
                   spreadRadius: 2,
                   blurRadius: 6,
-                  offset: const Offset(0, 2), // Sombra nos ícones
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -215,7 +206,6 @@ class TelaPrincipal extends StatelessWidget {
     );
   }
 
-  // Método de navegação temporária (substituir pelas páginas reais)
   void _navigateTo(BuildContext context, String pageName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Navegando para $pageName')),

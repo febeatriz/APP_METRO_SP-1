@@ -18,17 +18,18 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, 
       appBar: AppBar(
-        title: Text('Registrar Extintor'),
-        backgroundColor: Color(0xFF004AAD),
+        title: const Text('Registrar Extintor'),
+        backgroundColor: const Color(0xFF004AAD),
         centerTitle: true,
         actions: [
           Builder(
             builder: (context) => IconButton(
-              icon: Icon(Icons.menu),
+              icon: const Icon(Icons.menu),
               onPressed: () {
                 Scaffold.of(context)
-                    .openEndDrawer(); // Abre o Drawer usando o contexto correto
+                    .openEndDrawer(); 
               },
             ),
           ),
@@ -38,7 +39,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(
                 color: Color(0xFF004AAD),
               ),
@@ -51,36 +52,36 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Tela Principal'),
+              leading: const Icon(Icons.home),
+              title: const Text('Tela Principal'),
               onTap: () {
                 // Navegação para Tela Principal
               },
             ),
             ListTile(
-              leading: Icon(Icons.build),
-              title: Text('Manutenção'),
+              leading: const Icon(Icons.build),
+              title: const Text('Manutenção'),
               onTap: () {
                 // Navegação para Manutenção
               },
             ),
             ListTile(
-              leading: Icon(Icons.location_on),
-              title: Text('Localização'),
+              leading: const Icon(Icons.location_on),
+              title: const Text('Localização'),
               onTap: () {
                 // Navegação para Localização
               },
             ),
             ListTile(
-              leading: Icon(Icons.search),
-              title: Text('Consultar Extintor'),
+              leading: const Icon(Icons.search),
+              title: const Text('Consultar Extintor'),
               onTap: () {
                 // Navegação para Consulta de Extintores
               },
             ),
             ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('Configurações'),
+              leading: const Icon(Icons.settings),
+              title: const Text('Configurações'),
               onTap: () {
                 // Navegação para Configurações
               },
@@ -96,7 +97,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   "Preencha os dados do extintor",
                   style: TextStyle(
                     fontSize: 20,
@@ -165,7 +166,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                          const SnackBar(
                             content: Text('Extintor registrado com sucesso!'),
                             backgroundColor: Colors.green,
                           ),
@@ -173,7 +174,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF004AAD),
+                      backgroundColor: const Color(0xFF004AAD),
                       padding: const EdgeInsets.symmetric(
                           vertical: 14, horizontal: 50),
                       shape: RoundedRectangleBorder(
@@ -181,7 +182,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
                       ),
                       elevation: 5,
                     ),
-                    child: Text(
+                    child: const Text(
                       'Confirmar Registro',
                       style: TextStyle(
                         fontSize: 18,
@@ -199,7 +200,6 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
     );
   }
 
-  // Método para construir os campos de entrada com ícone dentro de um Card
   Widget _buildInputCard({
     required TextEditingController controller,
     required String label,
@@ -215,7 +215,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            Icon(icon, color: Color(0xFF004AAD), size: 28),
+            Icon(icon, color: const Color(0xFF004AAD), size: 28),
             const SizedBox(width: 16),
             Expanded(
               child: TextFormField(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import 'package:mobilegestaoextintores/src/telas/TelaPrincipal.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -23,6 +23,7 @@ class _TelaLoginState extends State<TelaLogin> {
     final imageHeight = screenHeight * 0.1;
 
     return Scaffold(
+      backgroundColor: Colors.white, 
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -213,32 +214,41 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   Future<void> _login(BuildContext context) async {
-    final email = _emailController.text;
-    final password = _passwordController.text;
+  final email = _emailController.text;
+  final password = _passwordController.text;
 
-    final response = await http.post(
-      Uri.parse('http://10.0.2.2:3001/login'), 
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
-    );
+  final response = await http.post(
+    Uri.parse('http://localhost:3001/login'), 
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'email': email, 'password': password}),
+  );
 
+  if (response.statusCode == 200) {
+    final responseData = jsonDecode(response.body);
+    print('Resposta da API: $responseData');
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      if (responseData['success']) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const TelaPrincipal()),
-        );
-      } else {
-        setState(() {
-          _errorMessage = responseData['message'] ?? 'Erro desconhecido';
-        });
-      }
+    if (responseData['success']) {
+      final nomeUsuario = responseData['nome'] ?? 'Usuário';
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('usuario_email', email); 
+      print("Nome do Usuário: $nomeUsuario");
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TelaPrincipal(nomeUsuario: nomeUsuario),
+        ),
+      );
     } else {
       setState(() {
-        _errorMessage = 'Erro ao se conectar ao servidor';
+        _errorMessage = responseData['message'] ?? 'Erro desconhecido';
       });
     }
+  } else {
+    print('Erro na requisição: ${response.statusCode} - ${response.body}');
+    setState(() {
+      _errorMessage = 'Erro ao se conectar ao servidor';
+    });
   }
+}
+
 }

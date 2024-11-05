@@ -1,7 +1,7 @@
 import 'package:mobilegestaoextintores/src/telas/Tela_Login.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Importando shared_preferences
-import 'tela_conta.dart'; // Importando o arquivo da TelaConta
+import 'package:shared_preferences/shared_preferences.dart';
+import 'tela_conta.dart'; 
 
 class TelaConfiguracao extends StatelessWidget {
   const TelaConfiguracao({super.key});
@@ -22,7 +22,6 @@ class TelaConfiguracao extends StatelessWidget {
               icon: Icons.account_circle,
               label: 'Conta',
               onTap: () {
-                // Navegar para a tela de Conta
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => TelaConta()));
               },
@@ -67,7 +66,19 @@ class TelaConfiguracao extends StatelessWidget {
               isLogout: true,
             ),
             const Spacer(),
-            Image.network('https://i.imgur.com/IZ8lRQK.png', width: 80),
+            Opacity(
+              opacity: 0.2, 
+              child: Center(
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.5, 
+                  height: MediaQuery.of(context).size.height * 0.1, 
+                  child: Image.asset(
+                    'assets/images/logo.jpeg',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
