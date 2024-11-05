@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobilegestaoextintores/src/telas/Tela_RegistrarExtintorManual.dart';
 import 'tela_configuracao.dart'; // Importa o arquivo de configuração
 
 class TelaPrincipal extends StatelessWidget {
@@ -7,9 +8,10 @@ class TelaPrincipal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50], // Cor de fundo suave e neutra
       appBar: AppBar(
-        backgroundColor: const Color(0xFF004AAD), // cor azul do metrô
+        backgroundColor: const Color(0xFF004AAD), // Azul profissional do metrô
+        elevation: 0, // Remoção da sombra da AppBar
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Image.network(
@@ -46,27 +48,26 @@ class TelaPrincipal extends StatelessWidget {
           children: [
             // Caixa de descrição principal
             Container(
-              padding: const EdgeInsets.all(20), // Espaçamento maior
+              padding: const EdgeInsets.all(20), // Mais espaçamento
               decoration: BoxDecoration(
-                color: Colors.white, // Fundo mais claro
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 5,
+                    color: Colors.grey.withOpacity(0.15),
+                    spreadRadius: 3,
                     blurRadius: 10,
-                    offset: const Offset(0, 3), // Sombra mais suave
+                    offset: const Offset(0, 5), // Sombra mais leve
                   ),
                 ],
               ),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.center, // Centralizando o texto
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
                     'Gerenciamento de Extintores - Metrô de São Paulo',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF004AAD),
                     ),
@@ -74,7 +75,7 @@ class TelaPrincipal extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'Mantenha o controle eficiente dos extintores de incêndio! Utilize nosso aplicativo para:',
+                    'Utilize o aplicativo para um controle eficiente dos extintores de incêndio:',
                     style: TextStyle(fontSize: 16, color: Colors.black87),
                     textAlign: TextAlign.center,
                   ),
@@ -107,45 +108,52 @@ class TelaPrincipal extends StatelessWidget {
             const Spacer(),
             // Rodapé com ícones e textos como botões
             Row(
-              mainAxisAlignment: MainAxisAlignment
-                  .spaceEvenly, // Mais espaçamento e alinhamento
+              mainAxisAlignment:
+                  MainAxisAlignment.spaceEvenly, // Melhor alinhamento
               children: [
                 _buildIconButton(
-                    icon: Icons
-                        .fire_extinguisher, // Ícone mais relevante para registrar extintores
-                    label: 'Registrar Extintor',
-                    onTap: () {
-                      _navigateTo(context, 'Registrar Extintor');
-                    }),
+                  icon: Icons.fire_extinguisher,
+                  label: 'Registrar',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => TelaRegistrarExtintor()),
+                    );
+                  },
+                ),
                 _buildIconButton(
-                    icon: Icons.build,
-                    label:
-                        'Manutenção', // Texto encurtado para melhor alinhamento
-                    onTap: () {
-                      _navigateTo(context, 'Entrada/Saída');
-                    }),
+                  icon: Icons.build,
+                  label: 'Manutenção',
+                  onTap: () {
+                    _navigateTo(context, 'Manutenção');
+                  },
+                ),
                 _buildIconButton(
-                    icon: Icons.map,
-                    label: 'Localização',
-                    onTap: () {
-                      _navigateTo(context, 'Localização');
-                    }),
+                  icon: Icons.map,
+                  label: 'Localização',
+                  onTap: () {
+                    _navigateTo(context, 'Localização');
+                  },
+                ),
                 _buildIconButton(
-                    icon: Icons.search,
-                    label: 'Consulta',
-                    onTap: () {
-                      _navigateTo(context, 'Consulta');
-                    }),
+                  icon: Icons.search,
+                  label: 'Consulta',
+                  onTap: () {
+                    _navigateTo(context, 'Consulta');
+                  },
+                ),
                 _buildIconButton(
-                    icon: Icons.settings,
-                    label: 'Configurações',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => TelaConfiguracao()),
-                      );
-                    }),
+                  icon: Icons.settings,
+                  label: 'Configurações',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => TelaConfiguracao()),
+                    );
+                  },
+                ),
               ],
             ),
           ],
@@ -159,7 +167,8 @@ class TelaPrincipal extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('• ', style: TextStyle(fontSize: 16, color: Color(0xFF004AAD))),
+        const Text('• ',
+            style: TextStyle(fontSize: 18, color: Color(0xFF004AAD))),
         Expanded(
           child: Text(
             text,
@@ -180,7 +189,7 @@ class TelaPrincipal extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: const Color(0xFF004AAD),
               shape: BoxShape.circle,
@@ -193,9 +202,9 @@ class TelaPrincipal extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(icon, size: 30, color: Colors.white),
+            child: Icon(icon, size: 32, color: Colors.white),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 8),
           Text(
             label,
             textAlign: TextAlign.center,
