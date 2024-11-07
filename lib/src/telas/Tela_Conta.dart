@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TelaConta extends StatefulWidget {
   const TelaConta({super.key});
@@ -13,7 +13,7 @@ class TelaConta extends StatefulWidget {
 }
 
 class _TelaContaState extends State<TelaConta> {
-  PickedFile? _imagemSelecionada;
+  XFile? _imagemSelecionada;  // Alterado de PickedFile para XFile
   String nome = 'Carregando...';
   String matricula = 'Carregando...';
   String cargo = 'Carregando...';
@@ -68,7 +68,7 @@ class _TelaContaState extends State<TelaConta> {
 
   Future<void> _trocarFotoPerfil() async {
     final picker = ImagePicker();
-    final imagem = await picker.getImage(source: ImageSource.gallery);
+    final XFile? imagem = await picker.pickImage(source: ImageSource.gallery);  // Usar pickImage ao invés de getImage
     if (imagem != null) {
       setState(() {
         _imagemSelecionada = imagem;

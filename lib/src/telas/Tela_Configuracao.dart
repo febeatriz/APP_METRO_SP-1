@@ -9,6 +9,7 @@ class TelaConfiguracao extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, 
       appBar: AppBar(
         title: const Text('Configuração'),
         backgroundColor: const Color(0xFF004AAD),

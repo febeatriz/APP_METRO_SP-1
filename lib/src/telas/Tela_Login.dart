@@ -117,7 +117,7 @@ class _TelaLoginState extends State<TelaLogin> {
                 height: MediaQuery.of(context).size.height * 0.1,
               ),
               Transform.translate(
-                offset: Offset(-20, 0),
+                offset: const Offset(-20, 0),
                 child: Image.asset(
                   'assets/images/pilar_metro_2.jpeg',
                   width: MediaQuery.of(context).size.width * 0.1,
@@ -194,24 +194,52 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   Widget _buildLoginButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () => _login(context),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF004AAD),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+  return ElevatedButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TelaPrincipal(nomeUsuario: 'Lucas',),
         ),
+      );
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF004AAD),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: const Text(
-        'ENTRAR',
-        style: TextStyle(
-          fontSize: 16,
-          color: Colors.white,
-        ),
+    ),
+    child: const Text(
+      'ENTRAR',
+      style: TextStyle(
+        fontSize: 16,
+        color: Colors.white,
       ),
-    );
-  }
+    ),
+  );
+}
+
+
+  // Widget _buildLoginButton(BuildContext context) {
+  //   return ElevatedButton(
+  //     onPressed: () => _login(context),
+  //     style: ElevatedButton.styleFrom(
+  //       backgroundColor: const Color(0xFF004AAD),
+  //       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(10),
+  //       ),
+  //     ),
+  //     child: const Text(
+  //       'ENTRAR',
+  //       style: TextStyle(
+  //         fontSize: 16,
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Future<void> _login(BuildContext context) async {
   final email = _emailController.text;

@@ -32,10 +32,14 @@ dependencies:
     sdk: flutter
   http: ^1.2.2
   shared_preferences: ^2.0.15
-  image_picker: ^0.8.4+3
-  qr_flutter: ^4.0.0
+  image_picker: ^1.1.2
   printing: ^5.13.4
-  pdf: ^3.11.1
+  pdf: ^3.11.1  
+  qr_flutter:
+    git:
+      url: https://github.com/theyakka/qr.flutter.git
+  qr_code_scanner: ^0.7.0
+
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -50,7 +54,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
