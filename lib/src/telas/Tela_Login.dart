@@ -18,12 +18,32 @@ class _TelaLoginState extends State<TelaLogin> {
   String _errorMessage = '';
 
   @override
+  void initState() {
+    super.initState();
+    _verificarUsuarioSalvo();
+  }
+
+  Future<void> _verificarUsuarioSalvo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final logado = prefs.getBool('usuario_logado') ?? false;
+
+    if (logado) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TelaPrincipal(),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final imageHeight = screenHeight * 0.1;
 
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -194,89 +214,65 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   Widget _buildLoginButton(BuildContext context) {
-  return ElevatedButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const TelaPrincipal(nomeUsuario: 'Lucas',),
+    return ElevatedButton(
+      onPressed: () => _login(context),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF004AAD),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
-      );
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF004AAD),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
       ),
-    ),
-    child: const Text(
-      'ENTRAR',
-      style: TextStyle(
-        fontSize: 16,
-        color: Colors.white,
+      child: const Text(
+        'ENTRAR',
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.white,
+        ),
       ),
-    ),
-  );
-}
-
-
-  // Widget _buildLoginButton(BuildContext context) {
-  //   return ElevatedButton(
-  //     onPressed: () => _login(context),
-  //     style: ElevatedButton.styleFrom(
-  //       backgroundColor: const Color(0xFF004AAD),
-  //       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(10),
-  //       ),
-  //     ),
-  //     child: const Text(
-  //       'ENTRAR',
-  //       style: TextStyle(
-  //         fontSize: 16,
-  //         color: Colors.white,
-  //       ),
-  //     ),
-  //   );
-  // }
+    );
+  }
 
   Future<void> _login(BuildContext context) async {
-  final email = _emailController.text;
-  final password = _passwordController.text;
+    final response = await http.post(
+      Uri.parse('http://192.168.0.6:3001/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': _emailController.text,
+        'password': _passwordController.text,
+      }),
+    );
 
-  final response = await http.post(
-    Uri.parse('http://localhost:3001/login'), 
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'email': email, 'password': password}),
-  );
+    print('Resposta da API: ${response.body}');
 
-  if (response.statusCode == 200) {
-    final responseData = jsonDecode(response.body);
-    print('Resposta da API: $responseData');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-    if (responseData['success']) {
-      final nomeUsuario = responseData['nome'] ?? 'Usuário';
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('usuario_email', email); 
-      print("Nome do Usuário: $nomeUsuario");
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TelaPrincipal(nomeUsuario: nomeUsuario),
-        ),
-      );
+      if (data['success'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('usuario_email', _emailController.text);
+        prefs.setBool('usuario_logado', true);
+
+        // Salva o nome do usuário
+        prefs.setString('usuario_nome', data['nome']);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TelaPrincipal(),
+          ),
+        );
+      } else {
+        print('Erro no servidor: ${data['message']}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro no login: ${data['message']}')),
+        );
+      }
     } else {
-      setState(() {
-        _errorMessage = responseData['message'] ?? 'Erro desconhecido';
-      });
+      print('Erro de conexão: ${response.statusCode}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro de conexão com o servidor')),
+      );
     }
-  } else {
-    print('Erro na requisição: ${response.statusCode} - ${response.body}');
-    setState(() {
-      _errorMessage = 'Erro ao se conectar ao servidor';
-    });
   }
-}
-
 }

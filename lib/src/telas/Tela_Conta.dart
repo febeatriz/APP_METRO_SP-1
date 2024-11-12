@@ -13,10 +13,11 @@ class TelaConta extends StatefulWidget {
 }
 
 class _TelaContaState extends State<TelaConta> {
-  XFile? _imagemSelecionada;  // Alterado de PickedFile para XFile
+  XFile? _imagemSelecionada; // Alterado de PickedFile para XFile
   String nome = 'Carregando...';
   String matricula = 'Carregando...';
   String cargo = 'Carregando...';
+  int usuarioId = 0;
 
   @override
   void initState() {
@@ -24,9 +25,10 @@ class _TelaContaState extends State<TelaConta> {
     _buscarUsuario();
   }
 
-  Future<void> _buscarUsuario() async {
+Future<void> _buscarUsuario() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? email = prefs.getString('usuario_email'); 
+    final String? email = prefs.getString('usuario_email');
+
     if (email == null) {
       setState(() {
         nome = 'Erro ao carregar';
@@ -37,23 +39,26 @@ class _TelaContaState extends State<TelaConta> {
     }
 
     try {
-      final response = await http.get(Uri.parse('http://localhost:3001/usuario?email=$email'));
-
-      print('Status da resposta: ${response.statusCode}');
-      print('Corpo da resposta: ${response.body}');
+      final response = await http
+          .get(Uri.parse('http://192.168.0.6:3001/usuario?email=$email'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('Dados do usuário: $data'); // Log para depuração
+
         setState(() {
-          nome = data['nome'];
-          matricula = data['matricula'];
-          cargo = data['cargo'];
+          nome = data['nome'] ?? 'Nome não encontrado';
+          matricula = data['matricula'] ?? 'Matrícula não encontrada';
+          cargo = data['cargo'] ?? 'Cargo não encontrado';
+          usuarioId = data['id'] ?? 0; // Atribui 0 caso o id seja nulo
         });
       } else {
+        final errorMessage =
+            jsonDecode(response.body)['message'] ?? 'Erro desconhecido';
         setState(() {
-          nome = 'Erro ao carregar';
-          matricula = 'Erro ao carregar';
-          cargo = 'Erro ao carregar';
+          nome = 'Erro ao carregar: $errorMessage';
+          matricula = 'Erro ao carregar: $errorMessage';
+          cargo = 'Erro ao carregar: $errorMessage';
         });
       }
     } catch (e) {
@@ -62,24 +67,62 @@ class _TelaContaState extends State<TelaConta> {
         matricula = 'Erro ao carregar';
         cargo = 'Erro ao carregar';
       });
-      print('Erro ao buscar usuário: $e');
+      print('Erro ao buscar usuário: $e'); // Log para depuração
     }
   }
 
+
+  // Método para selecionar e enviar a imagem
+  Future<void> _uploadImagem(int usuarioId) async {
+    final picker = ImagePicker();
+    final XFile? imagem = await picker.pickImage(source: ImageSource.gallery);
+
+    if (imagem != null) {
+      final bytes = await imagem.readAsBytes();
+
+      var uri = Uri.parse('http://192.168.0.6:3001/upload');
+      var request = http.MultipartRequest('POST', uri);
+
+      // Enviando a imagem
+      request.files.add(http.MultipartFile.fromBytes(
+        'image', // O nome do campo para a imagem
+        bytes,
+        filename: imagem.name,
+      ));
+
+      // Enviando o ID do usuário
+      request.fields['usuario_id'] = usuarioId.toString();
+
+      // Enviar a requisição para o servidor
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        print('Imagem salva com sucesso!');
+        // Pode adicionar feedback visual para o usuário
+      } else {
+        print('Falha ao salvar a imagem.');
+      }
+    }
+  }
+
+  // Método para trocar a foto de perfil
   Future<void> _trocarFotoPerfil() async {
     final picker = ImagePicker();
-    final XFile? imagem = await picker.pickImage(source: ImageSource.gallery);  // Usar pickImage ao invés de getImage
+    final XFile? imagem = await picker.pickImage(source: ImageSource.gallery);
+
     if (imagem != null) {
       setState(() {
         _imagemSelecionada = imagem;
       });
+      // Você pode adicionar a lógica de upload, caso deseje
+      await _uploadImagem(usuarioId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Minha Conta'),
         backgroundColor: const Color(0xFF004AAD),
@@ -90,21 +133,25 @@ class _TelaContaState extends State<TelaConta> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             GestureDetector(
-              onTap: _trocarFotoPerfil,
+              onTap: () => _uploadImagem(usuarioId), // Passando o usuarioId
               child: Stack(
                 alignment: Alignment.bottomRight,
                 children: [
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 500),
-                    transitionBuilder: (Widget child, Animation<double> animation) {
+                    transitionBuilder:
+                        (Widget child, Animation<double> animation) {
                       return ScaleTransition(scale: animation, child: child);
                     },
                     child: CircleAvatar(
-                      key: ValueKey<String>(_imagemSelecionada?.path ?? 'default'),
+                      key: ValueKey<String>(
+                          _imagemSelecionada?.path ?? 'default'),
                       radius: 60,
                       backgroundImage: _imagemSelecionada != null
                           ? FileImage(File(_imagemSelecionada!.path))
-                          : const AssetImage('assets/images/default_profile.png') as ImageProvider,
+                          : const AssetImage(
+                                  'assets/images/default_profile.png')
+                              as ImageProvider,
                     ),
                   ),
                   CircleAvatar(
@@ -117,7 +164,7 @@ class _TelaContaState extends State<TelaConta> {
             ),
             const SizedBox(height: 10),
             TextButton(
-              onPressed: _trocarFotoPerfil,
+              onPressed: _trocarFotoPerfil, // Chama o método implementado
               child: const Text(
                 'Trocar Foto de Perfil',
                 style: TextStyle(
