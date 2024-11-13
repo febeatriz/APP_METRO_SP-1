@@ -40,7 +40,7 @@ Future<void> _buscarUsuario() async {
 
     try {
       final response = await http
-          .get(Uri.parse('http://192.168.0.6:3001/usuario?email=$email'));
+          .get(Uri.parse('http://localhost:3001/usuario?email=$email'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -80,7 +80,7 @@ Future<void> _buscarUsuario() async {
     if (imagem != null) {
       final bytes = await imagem.readAsBytes();
 
-      var uri = Uri.parse('http://192.168.0.6:3001/upload');
+      var uri = Uri.parse('http://localhost:3001/upload');
       var request = http.MultipartRequest('POST', uri);
 
       // Enviando a imagem

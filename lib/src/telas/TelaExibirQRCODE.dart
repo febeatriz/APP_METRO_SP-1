@@ -1,41 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart'; // Importa a biblioteca para exibir o QR Code
 
 class TelaExibirQRCODE extends StatelessWidget {
-  // final String qrCodeUrl;
+  final QrImage qrCode;
 
-  // TelaExibirQRCODE({required this.qrCodeUrl}) {
-    // Coloque o print aqui, para verificar a URL do QR Code
-    // print(qrCodeUrl);
-  
+  const TelaExibirQRCODE({super.key, required this.qrCode});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QR Code do Extintor'),
         backgroundColor: const Color(0xFF011689),
-      ),
-      body: Center(
-        child: Image.network(
-        "http://192.168.0.6:3001/uploads/qrcodes/4.png",
-        width: 200,
-        height: 200,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return CircularProgressIndicator(
-            value: loadingProgress.expectedTotalBytes != null
-                ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                : null,
-          );
-        },
-        errorBuilder: (context, error, stackTrace) => Icon(
-          Icons.error,
-          color: Colors.red,
-          size: 100,
+        elevation: 4,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
-      )
-
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/logo.jpeg',
+              height: 40,
+              width: 40,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'QR Code do Extintor',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Container(
+        padding: const EdgeInsets.all(16.0),
+        color: const Color(0xFF011689),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 16),
+              child: Text(
+                'QR Code gerado com sucesso!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF011689),
+              ),
+              child: const Text(
+                'Voltar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -233,7 +233,7 @@ app.post('/registrar_extintor', async (req, res) => {
         const qrCodeCaminho = await gerarSalvarQRCode(qrData, patrimonio);  // Usando o patrimônio como nome do arquivo
 
         // Supondo que o servidor esteja configurado para servir arquivos estáticos na pasta 'uploads/qrcodes'
-        const qrCodeUrl = `http://192.168.0.6:3001/uploads/qrcodes/${patrimonio}.png`;
+        const qrCodeUrl = `http://localhost:3001/uploads/qrcodes/${patrimonio}.png`;
 
         // Consulta SQL para inserir os dados do extintor, incluindo o caminho da imagem do QR code
         const query = `
