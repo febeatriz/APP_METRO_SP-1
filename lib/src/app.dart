@@ -1,3 +1,4 @@
+import 'package:mobilegestaoextintores/src/telas/TelaExibirQRCODE.dart';
 import 'package:mobilegestaoextintores/src/telas/Tela_Login.dart';
 import 'package:flutter/material.dart';
 
@@ -6,11 +7,11 @@ class App extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false, 
       title: 'APLICATIVO GESTÃO DE EXTINTORES',
       home: Scaffold(
-      body: TelaLogin(),
+      body: TelaExibirQRCODE(),
       )
     );
   }

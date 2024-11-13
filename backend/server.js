@@ -19,6 +19,21 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+const uploadsPath = path.join(__dirname, 'uploads', 'qrcodes');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads/qrcodes', express.static(path.join(__dirname, 'uploads/qrcodes')));
+
+app.get('/qr-code/:patrimonio', (req, res) => {
+    const patrimonio = req.params.patrimonio;
+    const qrCodePath = path.join(__dirname, 'uploads', 'qrcodes', `${patrimonio}.png`);
+    if (fs.existsSync(qrCodePath)) {
+        res.sendFile(qrCodePath);
+    } else {
+        res.status(404).json({ success: false, message: 'QR Code não encontrado' });
+    }
+});
+
+
 // Configuração do banco de dados
 const db = mysql.createConnection({
     host: 'localhost',
@@ -172,7 +187,6 @@ app.get('/localizacoes', (req, res) => {
     });
 });
 
-
 // Função para gerar e salvar o QR code como imagem
 const gerarSalvarQRCode = async (data, nomeArquivo) => {
     try {
@@ -187,8 +201,7 @@ const gerarSalvarQRCode = async (data, nomeArquivo) => {
 
         // Gera o QR code e salva a imagem
         await QRCode.toFile(caminhoImagem, data);
-
-        return `http://192.168.0.6:3001/uploads/qrcodes/${nomeArquivo}.png`;
+        return `http://localhost:3001/uploads/qrcodes/${nomeArquivo}.png`;
     } catch (err) {
         console.error('Erro ao gerar o QR code:', err);
         throw err;

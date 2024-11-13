@@ -134,18 +134,18 @@ class TelaPrincipal extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildIconButton(
-                      icon: Icons.fire_extinguisher,
-                      label: 'Registrar',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const TelaRegistrarExtintor()),
-                        );
-                      },
-                    ),
+                    // _buildIconButton(
+                    //   icon: Icons.fire_extinguisher,
+                    //   label: 'Registrar',
+                    //   onTap: () {
+                    //     Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //           builder: (context) =>
+                    //               const TelaRegistrarExtintor()),
+                    //     );
+                    //   },
+                    // ),
                     _buildIconButton(
                       icon: Icons.build,
                       label: 'Manutenção',
