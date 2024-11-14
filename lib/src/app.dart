@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobilegestaoextintores/src/telas/TelaScanQR.dart';
 import 'telas/Tela_Login.dart';
-import 'telas/tela_scan_qr.dart';
 import 'telas/tela_info_extintor.dart';
-import 'dart:ui_web' as ui; 
-
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -13,11 +11,11 @@ class App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'APLICATIVO GESTÃO DE EXTINTORES',
-      initialRoute: '/',
-      routes: {
-        '/': (context) => TelaLogin(),
-        '/scan-qr': (context) => TelaScanQR(),
-      },
+      initialRoute: '/scan-qr',
+      // routes: {
+      //   '/': (context) => TelaLogin(),
+      //   '/scan-qr': (context) => ScannerQRCODE(),
+      // },
       // Aqui configuramos a rota dinâmica para passar 'patrimonio' como argumento
       onGenerateRoute: (settings) {
         if (settings.name == '/info-extintor') {

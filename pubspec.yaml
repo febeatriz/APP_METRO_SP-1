@@ -36,14 +36,13 @@ dependencies:
   printing: ^5.13.4
   pdf: ^3.11.1  
   qr_flutter: ^4.1.0
-  qr_code_scanner: ^0.7.0
   path_provider: ^2.0.8
   cupertino_icons: ^1.0.8
   flutter_barcode_sdk: ^2.2.8
   provider: ^6.1.2
   google_fonts: ^6.2.1
-  intl: ^0.17.0
-  qr_code_tools: ^0.1.0
+  intl: ^0.19.0
+  qr_code_scanner_plus: ^2.0.6
 
 dev_dependencies:
   flutter_test:

@@ -12,7 +12,7 @@ const PORT = 3001;
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '9534',
+    password: 'imtdb',
     database: 'metro_sp',
 });
 
