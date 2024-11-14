@@ -9,37 +9,12 @@ const QRCode = require('qrcode');
 const app = express();
 const PORT = 3001;
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadsPath); // Salva na pasta de uploads definida
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`); // Define o nome do arquivo
-    }
-});
-const upload = multer({ storage: storage });
-
-const uploadsPath = path.join(__dirname, 'uploads', 'qrcodes');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/uploads/qrcodes', express.static(path.join(__dirname, 'uploads/qrcodes')));
-
-app.get('/qr-code/:patrimonio', (req, res) => {
-    const patrimonio = req.params.patrimonio;
-    const qrCodePath = path.join(__dirname, 'uploads', 'qrcodes', `${patrimonio}.png`);
-    if (fs.existsSync(qrCodePath)) {
-        res.sendFile(qrCodePath);
-    } else {
-        res.status(404).json({ success: false, message: 'QR Code não encontrado' });
-    }
-});
-
-
 // Configuração do banco de dados
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '9534',
-    database: 'metro_sp', 
+    database: 'metro_sp',
 });
 
 // Conectar ao banco de dados
@@ -58,6 +33,114 @@ app.use(cors({
 
 // Middleware para análise do corpo da requisição
 app.use(bodyParser.json());
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadsPath); // Salva na pasta de uploads definida
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`); // Define o nome do arquivo
+    }
+});
+const upload = multer({ storage: storage });
+
+app.get('/qr-code/:patrimonio', (req, res) => {
+    const patrimonio = req.params.patrimonio;
+    const qrCodePath = path.join(__dirname, 'uploads', 'qrcodes', `${patrimonio}.png`);
+    if (fs.existsSync(qrCodePath)) {
+        res.sendFile(qrCodePath);
+    } else {
+        res.status(404).json({ success: false, message: 'QR Code não encontrado' });
+    }
+});
+
+const uploadsPath = path.join(__dirname, 'uploads', 'qrcodes');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads/qrcodes', express.static(uploadsPath));
+
+// Função para gerar e salvar o QR code como imagem
+const gerarSalvarQRCode = async (data, nomeArquivo) => {
+    try {
+        const caminhoImagem = path.join(uploadsPath, `${nomeArquivo}.png`);
+
+        // Verifica se a pasta existe, caso contrário, cria a pasta
+        if (!fs.existsSync(path.dirname(caminhoImagem))) {
+            fs.mkdirSync(path.dirname(caminhoImagem), { recursive: true });
+        }
+
+        // Gera o QR code e salva a imagem
+        await QRCode.toFile(caminhoImagem, data);
+        return `http://localhost:3001/uploads/qrcodes/${nomeArquivo}.png`;
+    } catch (err) {
+        console.error('Erro ao gerar o QR code:', err);
+        throw err;
+    }
+};
+
+app.post('/registrar_extintor', async (req, res) => {
+    // Desestruturação de req.body para inicializar as variáveis
+    const {
+        patrimonio,
+        tipo_id,
+        capacidade,
+        codigo_fabricante,
+        data_fabricacao,
+        data_validade,
+        ultima_recarga,
+        proxima_inspecao,
+        status,
+        linha_id,
+        id_localizacao,
+        observacoes
+    } = req.body;
+
+    // Definindo o objeto extintor após inicializar as variáveis
+    const extintor = {
+        patrimonio,
+        tipo_id,
+        capacidade,
+        codigo_fabricante,
+        data_fabricacao,
+        data_validade,
+        ultima_recarga,
+        proxima_inspecao,
+        status,
+        linha_id,
+        id_localizacao,
+        observacoes,
+    };
+
+    // Criação da string de dados para o QR code
+    const data = JSON.stringify(extintor);
+
+    try {
+        // Gera o QR code e salva
+        const qrCodeUrl = await gerarSalvarQRCode(data, patrimonio);
+
+        // Query para inserir no banco de dados
+        const query = `
+            INSERT INTO Extintores 
+            (Patrimonio, Tipo_ID, Capacidade, Codigo_Fabricante, Data_Fabricacao, Data_Validade, Ultima_Recarga, Proxima_Inspecao, status_id, Linha_ID, ID_Localizacao, QR_Code, Observacoes) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        db.query(query, [
+            patrimonio, tipo_id, capacidade, codigo_fabricante, data_fabricacao, data_validade, ultima_recarga, proxima_inspecao, status, linha_id, id_localizacao, qrCodeUrl, observacoes
+        ], (err, result) => {
+
+            if (err) {
+                console.error('Erro ao inserir no banco de dados:', err);
+                return res.status(500).json({ success: false, message: 'Erro ao registrar o extintor no banco de dados.' });
+            }
+            res.json({ success: true, qrCodeUrl });
+        });
+
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Erro ao gerar o QR code.' });
+    }
+});
+
+
 
 // Rota para upload da foto de perfil
 app.post('/upload', upload.single('image'), (req, res) => {
@@ -159,7 +242,20 @@ app.get('/usuario', (req, res) => {
     });
 });
 
-// Rota para buscar tipos de extintores
+app.get('/status', (req, res) => {
+    const query = 'SELECT id, nome FROM Status_Extintor';
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Erro ao consultar status:', err);
+            return res.status(500).json({ success: false, message: 'Erro ao buscar status' });
+        }
+
+        res.json({ success: true, data: results });
+    });
+});
+
+
 app.get('/tipos-extintores', (req, res) => {
     const query = 'SELECT id, tipo AS nome FROM Tipos_Extintores';
 
@@ -187,98 +283,6 @@ app.get('/localizacoes', (req, res) => {
     });
 });
 
-// Função para gerar e salvar o QR code como imagem
-const gerarSalvarQRCode = async (data, nomeArquivo) => {
-    try {
-        // Define o caminho do arquivo onde a imagem será salva
-        const caminhoImagem = path.join(__dirname, 'uploads', 'qrcodes', `${nomeArquivo}.png`);
-
-        // Verifica se a pasta existe, caso contrário cria a pasta
-        const pastaImagem = path.dirname(caminhoImagem);
-        if (!fs.existsSync(pastaImagem)) {
-            fs.mkdirSync(pastaImagem, { recursive: true });
-        }
-
-        // Gera o QR code e salva a imagem
-        await QRCode.toFile(caminhoImagem, data);
-        return `http://localhost:3001/uploads/qrcodes/${nomeArquivo}.png`;
-    } catch (err) {
-        console.error('Erro ao gerar o QR code:', err);
-        throw err;
-    }
-};
-
-// Rota para registrar o extintor
-app.post('/registrar_extintor', async (req, res) => {
-    const {
-        patrimonio,
-        tipo_id,
-        capacidade,
-        codigo_fabricante,
-        data_fabricacao,
-        data_validade,
-        ultima_recarga,
-        proxima_inspecao,
-        status,
-        id_localizacao,
-        linha_id,
-        observacoes,
-    } = req.body;
-
-    // Gerar o QR code com base no patrimônio
-    const qrData = `Patrimonio: ${patrimonio}`;
-
-    try {
-        // Gera o QR code e salva como imagem
-        const qrCodeCaminho = await gerarSalvarQRCode(qrData, patrimonio);  // Usando o patrimônio como nome do arquivo
-
-        // Supondo que o servidor esteja configurado para servir arquivos estáticos na pasta 'uploads/qrcodes'
-        const qrCodeUrl = `http://localhost:3001/uploads/qrcodes/${patrimonio}.png`;
-
-        // Consulta SQL para inserir os dados do extintor, incluindo o caminho da imagem do QR code
-        const query = `
-            INSERT INTO Extintores (Patrimonio, Tipo_ID, Capacidade, Codigo_Fabricante, Data_Fabricacao, Data_Validade, Ultima_Recarga, Proxima_Inspecao, Status, ID_Localizacao, Linha_ID, QR_Code, Observacoes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        db.query(
-            query,
-            [
-                patrimonio,
-                tipo_id,
-                capacidade,
-                codigo_fabricante,
-                data_fabricacao,
-                data_validade,
-                ultima_recarga,
-                proxima_inspecao,
-                status,
-                id_localizacao,
-                linha_id,
-                qrCodeUrl,  // Armazenando a URL pública do QR code
-                observacoes,
-            ],
-            (err, result) => {
-                if (err) {
-                    console.error('Erro ao registrar o extintor:', err);
-                    return res.status(500).json({ success: false, message: 'Erro ao registrar o extintor' });
-                }
-
-                res.json({
-                    success: true,
-                    message: 'Extintor registrado com sucesso',
-                    extintorId: result.insertId,
-                    qrCode: qrCodeUrl,  // Retorna a URL pública do QR code gerado
-                });
-            }
-        );
-    } catch (err) {
-        console.error('Erro ao gerar o QR code:', err);
-        res.status(500).json({ success: false, message: 'Erro ao gerar o QR code' });
-    }
-});
-
-
 app.get('/linhas', (req, res) => {
     const query = 'SELECT * FROM Linhas';
 
@@ -291,8 +295,6 @@ app.get('/linhas', (req, res) => {
     });
 });
 
-
-// Iniciar o servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });

@@ -244,6 +244,7 @@ class _TelaLoginState extends State<TelaLogin> {
     );
 
     print('Resposta da API: ${response.body}');
+    print('Código de status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);

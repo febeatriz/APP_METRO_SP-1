@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class TelaRegistrarExtintor extends StatefulWidget {
   const TelaRegistrarExtintor({super.key});
@@ -22,376 +23,295 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
       TextEditingController();
   final TextEditingController _proximaInspecaoController =
       TextEditingController();
-  final TextEditingController _statusController = TextEditingController();
   final TextEditingController _observacoesController = TextEditingController();
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  String? _qrCodeData; // Variável para armazenar os dados do QR Code
+  String? _tipoSelecionado;
+  String? _linhaSelecionada;
+  String? _statusSelecionado;
+  String? _localizacaoSelecionada;
+  String? _qrCodeData;
 
-  List<Map<String, dynamic>> _tiposExtintores = [];
-  List<Map<String, dynamic>> _localizacoes = [];
-  List<Map<String, dynamic>> _linhas = [];
-  String? _selectedTipo;
-  String? _selectedLocalizacao;
-  String? _selectedLinha;
-  bool _isLoading = false;
+  List<Map<String, dynamic>> tipos = [];
+  List<Map<String, dynamic>> linhas = [];
+  List<Map<String, dynamic>> status = [];
+  List<Map<String, dynamic>> localizacoes = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchTiposExtintores();
-    _fetchLocalizacoes();
-    _fetchLinhas();
+    fetchTipos();
+    fetchLinhas();
+    fetchStatus();
+    fetchLocalizacoes();
   }
 
-  Future<void> _fetchTiposExtintores() async {
-    try {
-      final response =
-          await http.get(Uri.parse('http://localhost:3001/tipos-extintores'));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          _tiposExtintores = List<Map<String, dynamic>>.from(data['data']);
-        });
-      }
-    } catch (error) {
-      print("Erro ao buscar tipos de extintores: $error");
+  Future<void> fetchTipos() async {
+    final response =
+        await http.get(Uri.parse('http://localhost:3001/tipos-extintores'));
+    if (response.statusCode == 200) {
+      setState(() {
+        tipos =
+            List<Map<String, dynamic>>.from(json.decode(response.body)['data']);
+      });
     }
   }
 
-  Future<void> _fetchLocalizacoes() async {
-    try {
-      final response =
-          await http.get(Uri.parse('http://localhost:3001/localizacoes'));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          _localizacoes = List<Map<String, dynamic>>.from(data['data']);
-        });
-      }
-    } catch (error) {
-      print("Erro ao buscar localizações: $error");
+  Future<void> fetchLinhas() async {
+    final response = await http.get(Uri.parse('http://localhost:3001/linhas'));
+    if (response.statusCode == 200) {
+      setState(() {
+        linhas =
+            List<Map<String, dynamic>>.from(json.decode(response.body)['data']);
+      });
     }
   }
 
-  Future<void> _fetchLinhas() async {
-    try {
-      final response =
-          await http.get(Uri.parse('http://localhost:3001/linhas'));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          _linhas = List<Map<String, dynamic>>.from(data['data']);
-        });
-      }
-    } catch (error) {
-      print("Erro ao buscar linhas: $error");
+  Future<void> fetchStatus() async {
+    final response = await http.get(Uri.parse('http://localhost:3001/status'));
+    if (response.statusCode == 200) {
+      setState(() {
+        status =
+            List<Map<String, dynamic>>.from(json.decode(response.body)['data']);
+      });
     }
   }
 
-  String formatarData(String data) {
-    final partes = data.split('/');
-    if (partes.length != 3) {
-      throw FormatException('Formato de data inválido');
+  Future<void> fetchLocalizacoes() async {
+    final response =
+        await http.get(Uri.parse('http://localhost:3001/localizacoes'));
+    if (response.statusCode == 200) {
+      setState(() {
+        localizacoes =
+            List<Map<String, dynamic>>.from(json.decode(response.body)['data']);
+      });
     }
-    return '${partes[2]}-${partes[1]}-${partes[0]}';
   }
 
-  Future<void> _registrarExtintor() async {
+  void _generateQrCode() {
+    Map<String, dynamic> qrCodeData = {
+      "patrimonio": _patrimonioController.text,
+      "tipo_id": _tipoSelecionado,
+      "capacidade": _capacidadeController.text,
+      "codigo_fabricante": _codigoFabricanteController.text,
+      "data_fabricacao": _dataFabricacaoController.text,
+      "data_validade": _dataValidadeController.text,
+      "ultima_recarga": _ultimaRecargaController.text,
+      "proxima_inspecao": _proximaInspecaoController.text,
+      "status": _statusSelecionado,
+      "linha_id": _linhaSelecionada,
+      "id_localizacao": _localizacaoSelecionada,
+      "observacoes": _observacoesController.text,
+    };
+
+    _qrCodeData = jsonEncode(qrCodeData);
+    setState(() {});
+  }
+
+  Future<void> _registerExtintor() async {
+    if (_qrCodeData == null) {
+      return;
+    }
+
     try {
-      final patrimonio = _patrimonioController.text;
-      final capacidade = _capacidadeController.text;
-      final codigoFabricante = _codigoFabricanteController.text;
-      final dataFabricacao = formatarData(_dataFabricacaoController.text);
-      final dataValidade = formatarData(_dataValidadeController.text);
-      final ultimaRecarga = formatarData(_ultimaRecargaController.text);
-      final proximaInspecao = formatarData(_proximaInspecaoController.text);
-      final status = _statusController.text;
-      final idLocalizacao = _selectedLocalizacao;
-      final linhaId = _selectedLinha;
-      final observacoes = _observacoesController.text;
-
-      final data = {
-        'patrimonio': patrimonio,
-        'tipo_id': _selectedTipo,
-        'capacidade': capacidade,
-        'codigo_fabricante': codigoFabricante,
-        'data_fabricacao': dataFabricacao,
-        'data_validade': dataValidade,
-        'ultima_recarga': ultimaRecarga,
-        'proxima_inspecao': proximaInspecao,
-        'status': status,
-        'id_localizacao': idLocalizacao,
-        'linha_id': linhaId,
-        'observacoes': observacoes,
-      };
-
       final response = await http.post(
         Uri.parse('http://localhost:3001/registrar_extintor'),
-        body: json.encode(data),
-        headers: {'Content-Type': 'application/json'},
+        headers: {"Content-Type": "application/json"},
+        body: _qrCodeData,
       );
 
-      final responseData = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseData['success']) {
-        setState(() {
-          _qrCodeData =
-              responseData['qrCode']; // Define o dado a ser exibido no QR Code
-        });
-      } else {
-        _showError(responseData['message']);
-      }
-    } catch (error) {
-      print('Erro ao registrar o extintor: $error');
-      _showError('Erro ao registrar o extintor');
-    }
-  }
-
-  void _showError(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Erro'),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Extintor registrado com sucesso!')),
         );
-      },
-    );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao registrar o extintor.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro de conexão com o servidor.')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF011689),
-          elevation: 4,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/images/logo.jpeg',
-                height: 40,
-                width: 40,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Registrar Extintor',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+      appBar: AppBar(
+        title: Text('Registrar Extintor'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _patrimonioController,
+                  decoration: InputDecoration(labelText: 'Patrimônio'),
                 ),
-              ),
-            ],
+                DropdownButtonFormField(
+                  value: _tipoSelecionado,
+                  decoration: InputDecoration(labelText: 'Tipo'),
+                  items: tipos.map((tipo) {
+                    return DropdownMenuItem(
+                      value: tipo['id'].toString(),
+                      child: Text(tipo['nome']),
+                    );
+                  }).toList(),
+                  onChanged: (valor) {
+                    setState(() {
+                      _tipoSelecionado = valor;
+                    });
+                  },
+                ),
+                TextFormField(
+                  controller: _capacidadeController,
+                  decoration: InputDecoration(labelText: 'Capacidade'),
+                ),
+                TextFormField(
+                  controller: _codigoFabricanteController,
+                  decoration: InputDecoration(labelText: 'Código Fabricante'),
+                ),
+                TextFormField(
+                  controller: _dataFabricacaoController,
+                  decoration: InputDecoration(labelText: 'Data Fabricação'),
+                  readOnly: true,
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      _dataFabricacaoController.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
+                    }
+                  },
+                ),
+                TextFormField(
+                  controller: _dataValidadeController,
+                  decoration: InputDecoration(labelText: 'Data Validade'),
+                  readOnly: true,
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      _dataValidadeController.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
+                    }
+                  },
+                ),
+                TextFormField(
+                  controller: _ultimaRecargaController,
+                  decoration: InputDecoration(labelText: 'Última Recarga'),
+                  readOnly: true,
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      _ultimaRecargaController.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
+                    }
+                  },
+                ),
+                TextFormField(
+                  controller: _proximaInspecaoController,
+                  decoration: InputDecoration(labelText: 'Próxima Inspeção'),
+                  readOnly: true,
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      _proximaInspecaoController.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
+                    }
+                  },
+                ),
+                DropdownButtonFormField(
+                  value: _statusSelecionado,
+                  decoration: InputDecoration(labelText: 'Status'),
+                  items: status.map((status) {
+                    return DropdownMenuItem(
+                      value: status['id'].toString(),
+                      child: Text(status['nome']),
+                    );
+                  }).toList(),
+                  onChanged: (valor) {
+                    setState(() {
+                      _statusSelecionado = valor;
+                    });
+                  },
+                ),
+                DropdownButtonFormField(
+                  value: _linhaSelecionada,
+                  decoration: InputDecoration(labelText: 'Linha'),
+                  items: linhas.map((linha) {
+                    return DropdownMenuItem(
+                      value: linha['id'].toString(),
+                      child: Text(linha['nome']),
+                    );
+                  }).toList(),
+                  onChanged: (valor) {
+                    setState(() {
+                      _linhaSelecionada = valor;
+                    });
+                  },
+                ),
+                DropdownButtonFormField(
+                  value: _localizacaoSelecionada,
+                  decoration: InputDecoration(labelText: 'Localização'),
+                  items: localizacoes.map((localizacao) {
+                    return DropdownMenuItem(
+                      value: localizacao['id'].toString(),
+                      child: Text(localizacao['nome']),
+                    );
+                  }).toList(),
+                  onChanged: (valor) {
+                    setState(() {
+                      _localizacaoSelecionada = valor;
+                    });
+                  },
+                ),
+                TextFormField(
+                  controller: _observacoesController,
+                  decoration: InputDecoration(labelText: 'Observações'),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    _generateQrCode();
+                    _registerExtintor();
+                  },
+                  child: Text('Registrar Extintor'),
+                ),
+                if (_qrCodeData != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: QrImageView(
+                      data: _qrCodeData!,
+                      version: QrVersions.auto,
+                      size: 200.0,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Container(
-                color: const Color(0xFF011689),
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                    key: _formKey,
-                    child: Center(
-                        child: SingleChildScrollView(
-                            child: Column(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 8,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(children: [
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 16),
-                            child: Text(
-                              'Preencha os campos abaixo para registrar um extintor',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const Divider(color: Colors.black12),
-                          _buildTextField('Patrimônio', _patrimonioController),
-                          _buildDropdownField(
-                              'Tipo', _tiposExtintores, _selectedTipo, (value) {
-                            setState(() => _selectedTipo = value);
-                          }),
-                          _buildTextField('Capacidade', _capacidadeController),
-                          _buildTextField('Código do Fabricante',
-                              _codigoFabricanteController),
-                          _buildDateField(
-                              'Data de Fabricação', _dataFabricacaoController),
-                          _buildDateField(
-                              'Data de Validade', _dataValidadeController),
-                          _buildDateField(
-                              'Última Recarga', _ultimaRecargaController),
-                          _buildDateField(
-                              'Próxima Inspeção', _proximaInspecaoController),
-                          _buildTextField('Status', _statusController),
-                          _buildDropdownField('Linha', _linhas, _selectedLinha,
-                              (value) {
-                            setState(() => _selectedLinha = value);
-                          }),
-                          _buildDropdownField('Localização', _localizacoes,
-                              _selectedLocalizacao, (value) {
-                            setState(() => _selectedLocalizacao = value);
-                          }),
-                          _buildTextField(
-                              'Observações', _observacoesController),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: _registrarExtintor,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF011689),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 15, horizontal: 40),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: const Text('Registrar Extintor',
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.white)),
-                          ),
-                          const SizedBox(height: 20),
-                          if (_qrCodeData != null)
-                            Column(
-                              children: [
-                                const Text('QR Code Gerado:'),
-                                QrImageView(
-                                  data: _qrCodeData!,
-                                  version: QrVersions.auto,
-                                  size: 200.0,
-                                ),
-                              ],
-                            )
-                        ]),
-                      ),
-                    ]))))));
-  }
-
-  Widget _buildTextField(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.black),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Este campo é obrigatório';
-          }
-          return null;
-        },
-      ),
-    );
-  }
-
-  Widget _buildDateField(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.black),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        keyboardType: TextInputType.none,
-        onTap: () async {
-          FocusScope.of(context).requestFocus(FocusNode());
-          DateTime? pickedDate = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2101),
-          );
-          if (pickedDate != null) {
-            setState(() {
-              controller.text =
-                  "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
-            });
-          }
-        },
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Este campo é obrigatório';
-          }
-          return null;
-        },
-      ),
-    );
-  }
-
-  Widget _buildDropdownField(String label, List<Map<String, dynamic>> items,
-      String? selectedItem, Function(String?) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<String>(
-        value: selectedItem,
-        onChanged: (value) {
-          onChanged(value);
-        },
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.black),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        items: items.map((item) {
-          return DropdownMenuItem<String>(
-            value: item['id'].toString(),
-            child: Text(item['nome']),
-          );
-        }).toList(),
-        validator: (value) {
-          if (value == null) {
-            return 'Este campo é obrigatório';
-          }
-          return null;
-        },
       ),
     );
   }
