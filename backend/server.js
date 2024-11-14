@@ -9,7 +9,6 @@ const QRCode = require('qrcode');
 const app = express();
 const PORT = 3001;
 
-// Configuração do banco de dados
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -17,7 +16,6 @@ const db = mysql.createConnection({
     database: 'metro_sp',
 });
 
-// Conectar ao banco de dados
 db.connect((err) => {
     if (err) {
         console.error('Erro ao conectar ao banco de dados:', err);
@@ -28,18 +26,17 @@ db.connect((err) => {
 
 // Middleware para CORS
 app.use(cors({
-    origin: '*',  // Permite todas as origens
+    origin: '*', 
 }));
 
-// Middleware para análise do corpo da requisição
 app.use(bodyParser.json());
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadsPath); // Salva na pasta de uploads definida
+        cb(null, uploadsPath);
     },
     filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`); // Define o nome do arquivo
+        cb(null, `${Date.now()}-${file.originalname}`); 
     }
 });
 const upload = multer({ storage: storage });
@@ -58,17 +55,14 @@ const uploadsPath = path.join(__dirname, 'uploads', 'qrcodes');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/qrcodes', express.static(uploadsPath));
 
-// Função para gerar e salvar o QR code como imagem
 const gerarSalvarQRCode = async (data, nomeArquivo) => {
     try {
         const caminhoImagem = path.join(uploadsPath, `${nomeArquivo}.png`);
 
-        // Verifica se a pasta existe, caso contrário, cria a pasta
         if (!fs.existsSync(path.dirname(caminhoImagem))) {
             fs.mkdirSync(path.dirname(caminhoImagem), { recursive: true });
         }
 
-        // Gera o QR code e salva a imagem
         await QRCode.toFile(caminhoImagem, data);
         return `http://localhost:3001/uploads/qrcodes/${nomeArquivo}.png`;
     } catch (err) {
@@ -78,7 +72,6 @@ const gerarSalvarQRCode = async (data, nomeArquivo) => {
 };
 
 app.post('/registrar_extintor', async (req, res) => {
-    // Desestruturação de req.body para inicializar as variáveis
     const {
         patrimonio,
         tipo_id,
@@ -94,7 +87,6 @@ app.post('/registrar_extintor', async (req, res) => {
         observacoes
     } = req.body;
 
-    // Definindo o objeto extintor após inicializar as variáveis
     const extintor = {
         patrimonio,
         tipo_id,
@@ -110,7 +102,6 @@ app.post('/registrar_extintor', async (req, res) => {
         observacoes,
     };
 
-    // Criação da string de dados para o QR code
     const data = JSON.stringify(extintor);
 
     try {
@@ -140,9 +131,6 @@ app.post('/registrar_extintor', async (req, res) => {
     }
 });
 
-
-
-// Rota para upload da foto de perfil
 app.post('/upload', upload.single('image'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ success: false, message: 'Nenhuma imagem enviada' });
@@ -171,7 +159,6 @@ app.post('/upload', upload.single('image'), (req, res) => {
     });
 });
 
-// Rota de login
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
 
@@ -179,7 +166,6 @@ app.post('/login', (req, res) => {
         return res.status(400).json({ success: false, message: 'Campos obrigatórios faltando' });
     }
 
-    // Consulta ao banco de dados para verificar se o usuário existe, incluindo o nome do cargo
     const query = `
         SELECT usuarios.id, usuarios.nome, cargos.nome AS cargo
         FROM usuarios
@@ -202,7 +188,6 @@ app.post('/login', (req, res) => {
     });
 });
 
-// Rota para buscar informações do usuário
 app.get('/usuario', (req, res) => {
     const email = req.query.email;
 
@@ -255,7 +240,6 @@ app.get('/status', (req, res) => {
     });
 });
 
-
 app.get('/tipos-extintores', (req, res) => {
     const query = 'SELECT id, tipo AS nome FROM Tipos_Extintores';
 
@@ -269,7 +253,6 @@ app.get('/tipos-extintores', (req, res) => {
     });
 });
 
-// Rota para buscar localizações
 app.get('/localizacoes', (req, res) => {
     const query = 'SELECT ID_Localizacao AS id, Area AS nome FROM Localizacoes';
 

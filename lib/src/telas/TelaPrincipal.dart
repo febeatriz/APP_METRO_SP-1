@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mobilegestaoextintores/src/telas/Tela_RegistrarExtintorManual.dart';
 import 'tela_configuracao.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:ui_web' as ui; 
+
+// Substitua qualquer importação de 'flutter_web' relacionada a isso
+
 
 class TelaPrincipal extends StatelessWidget {
   const TelaPrincipal({super.key});
@@ -144,6 +148,14 @@ class TelaPrincipal extends StatelessWidget {
                               builder: (context) =>
                                   const TelaRegistrarExtintor()),
                         );
+                      },
+                    ),
+                    _buildIconButton(
+                      icon: Icons.qr_code_scanner, // Ícone de QR Code Scanner
+                      label: 'Scanner QR',
+                      onTap: () {
+                        Navigator.pushNamed(context,
+                            '/scan-qr'); // Navegação para a tela de escanear QR
                       },
                     ),
                     _buildIconButton(

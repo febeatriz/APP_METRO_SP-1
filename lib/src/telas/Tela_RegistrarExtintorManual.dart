@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:ui';
+import 'dart:ui_web' as ui; 
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -133,6 +136,23 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
         SnackBar(content: Text('Erro de conexão com o servidor.')),
       );
     }
+  }
+
+  Future<void> _printQrCode() async {
+    if (_qrCodeData == null) return;
+
+    final image = await QrPainter(
+      data: _qrCodeData!,
+      version: QrVersions.auto,
+      gapless: true,
+    ).toImage(200);
+
+    final byteData = await image.toByteData(format: ImageByteFormat.png);
+    final uint8List = byteData!.buffer.asUint8List();
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => uint8List,
+    );
   }
 
   @override
@@ -302,10 +322,18 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
                 if (_qrCodeData != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 20),
-                    child: QrImageView(
-                      data: _qrCodeData!,
-                      version: QrVersions.auto,
-                      size: 200.0,
+                    child: Column(
+                      children: [
+                        QrImageView(
+                          data: _qrCodeData!,
+                          version: QrVersions.auto,
+                          size: 200.0,
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.print),
+                          onPressed: _printQrCode,
+                        ),
+                      ],
                     ),
                   ),
               ],

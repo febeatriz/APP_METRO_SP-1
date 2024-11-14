@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:mobilegestaoextintores/src/telas/TelaPrincipal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:ui_web' as ui; 
+
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
