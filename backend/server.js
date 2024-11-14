@@ -71,6 +71,68 @@ const gerarSalvarQRCode = async (data, nomeArquivo) => {
     }
 };
 
+const atualizarStatusExtintor = async (idExtintor) => {
+    try {
+        // Recupera o extintor com base no ID
+        const query = 'SELECT * FROM Extintores WHERE Patrimonio = ?';
+        db.query(query, [idExtintor], (err, results) => {
+            if (err) {
+                console.error('Erro ao buscar extintor:', err);
+                return;
+            }
+
+            const extintor = results[0];
+            if (!extintor) {
+                console.log('Extintor não encontrado');
+                return;
+            }
+
+            let novoStatus;
+            const dataAtual = new Date();
+
+            // Verifica se o extintor está vencido
+            if (new Date(extintor.Data_Validade) < dataAtual) {
+                novoStatus = 'Vencido';
+            }
+            // Verifica se o extintor foi violado
+            else if (extintor.Status === 'violado') {
+                novoStatus = 'Violado';
+            }
+            // Caso contrário, considera o status como Ativo
+            else {
+                novoStatus = 'Ativo';
+            }
+
+            // Recupera o id do status a partir do nome
+            const queryStatus = 'SELECT id FROM Status_Extintor WHERE nome = ?';
+            db.query(queryStatus, [novoStatus], (err, statusResult) => {
+                if (err) {
+                    console.error('Erro ao buscar status:', err);
+                    return;
+                }
+
+                if (statusResult.length === 0) {
+                    console.log('Status não encontrado');
+                    return;
+                }
+
+                const statusId = statusResult[0].id;
+
+                // Atualiza o status do extintor no banco
+                const updateQuery = 'UPDATE Extintores SET status_id = ? WHERE Patrimonio = ?';
+                db.query(updateQuery, [statusId, idExtintor], (err, updateResult) => {
+                    if (err) {
+                        console.error('Erro ao atualizar o status do extintor:', err);
+                        return;
+                    }
+                    console.log('Status do extintor atualizado para:', novoStatus);
+                });
+            });
+        });
+    } catch (err) {
+        console.error('Erro ao atualizar o status:', err);
+    }
+};
 app.post('/registrar_extintor', async (req, res) => {
     const {
         patrimonio,
@@ -102,13 +164,11 @@ app.post('/registrar_extintor', async (req, res) => {
         observacoes,
     };
 
-    const data = JSON.stringify(extintor);
-
     try {
         // Gera o QR code e salva
-        const qrCodeUrl = await gerarSalvarQRCode(data, patrimonio);
+        const qrCodeUrl = await gerarSalvarQRCode(JSON.stringify(extintor), patrimonio);
 
-        // Query para inserir no banco de dados
+        // Insere o extintor no banco de dados
         const query = `
             INSERT INTO Extintores 
             (Patrimonio, Tipo_ID, Capacidade, Codigo_Fabricante, Data_Fabricacao, Data_Validade, Ultima_Recarga, Proxima_Inspecao, status_id, Linha_ID, ID_Localizacao, QR_Code, Observacoes) 
@@ -118,11 +178,14 @@ app.post('/registrar_extintor', async (req, res) => {
         db.query(query, [
             patrimonio, tipo_id, capacidade, codigo_fabricante, data_fabricacao, data_validade, ultima_recarga, proxima_inspecao, status, linha_id, id_localizacao, qrCodeUrl, observacoes
         ], (err, result) => {
-
             if (err) {
                 console.error('Erro ao inserir no banco de dados:', err);
                 return res.status(500).json({ success: false, message: 'Erro ao registrar o extintor no banco de dados.' });
             }
+
+            // Após inserir, atualiza o status do extintor
+            atualizarStatusExtintor(patrimonio);
+
             res.json({ success: true, qrCodeUrl });
         });
 
@@ -130,6 +193,202 @@ app.post('/registrar_extintor', async (req, res) => {
         res.status(500).json({ success: false, error: 'Erro ao gerar o QR code.' });
     }
 });
+
+app.get('/extintores', (req, res) => {
+    const query = 'SELECT Patrimonio, Tipo_ID FROM Extintores';
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Erro ao buscar extintores: ' + err.stack);
+            return res.status(500).json({ success: false, message: 'Erro ao buscar extintores' });
+        }
+
+        console.log('Resultados encontrados:', results); // Adicione esse log para verificar o retorno
+
+        res.status(200).json({ success: true, extintores: results });
+    });
+});
+
+// app.post('/salvar_manutencao', (req, res) => {
+//     const {
+//         patrimonio,          // Usando Patrimonio
+//         descricao,
+//         responsavel,
+//         observacoes,
+//         data_manutencao,
+//         ultima_recarga,
+//         proxima_inspecao,
+//         data_vencimento
+//     } = req.body;
+
+//     // Verificação para garantir que todos os campos obrigatórios estão presentes
+//     if (
+//         !patrimonio ||
+//         !descricao ||
+//         !responsavel ||
+//         !data_manutencao ||
+//         !ultima_recarga ||
+//         !proxima_inspecao ||
+//         !data_vencimento
+//     ) {
+//         return res.status(400).json({ success: false, message: 'Todos os campos são obrigatórios' });
+//     }
+
+//     // 1. Inserir a manutenção no histórico de manutenção
+//     const queryManutencao = `
+//         INSERT INTO Historico_Manutencao (ID_Extintor, Data_Manutencao, Descricao, Responsavel_Manutencao, Observacoes)
+//         VALUES (?, ?, ?, ?, ?)
+//     `;
+
+//     // Executar a consulta para salvar a manutenção
+//     db.query(queryManutencao, [
+//         patrimonio,                // Referência ao campo Patrimonio como ID_Extintor
+//         data_manutencao,
+//         descricao,
+//         responsavel,
+//         observacoes || '',  // Observações podem ser nulas
+//     ], (err, result) => {
+//         if (err) {
+//             console.error('Erro ao salvar manutenção: ' + err.stack);
+//             return res.status(500).json({ success: false, message: 'Erro ao salvar manutenção' });
+//         }
+
+//         // 2. Agora, atualizamos os dados na tabela Extintores com as novas informações
+//         const queryExtintores = `
+//             UPDATE Extintores
+//             SET Ultima_Recarga = ?, Proxima_Inspecao = ?, Data_Validade = ?
+//             WHERE Patrimonio = ?
+//         `;
+
+//         // Atualizar as informações do extintor
+//         db.query(queryExtintores, [
+//             ultima_recarga,
+//             proxima_inspecao,
+//             data_vencimento,
+//             patrimonio    // Usando Patrimonio aqui para atualizar o extintor correto
+//         ], (err2, result2) => {
+//             if (err2) {
+//                 print('Resposta do servidor: $responseData'); // Log da resposta completa
+//                 console.error('Erro ao atualizar extintores: ' + err2.stack);
+//                 return res.status(500).json({ success: false, message: 'Erro ao atualizar extintores' });
+//             }
+
+//             // Se a manutenção e a atualização foram bem-sucedidas
+//             res.status(200).json({ success: true, message: 'Manutenção salva e dados atualizados com sucesso!' });
+//         });
+//     });
+// });
+app.post('/salvar_manutencao', (req, res) => {
+    const {
+        patrimonio,          // Usando Patrimonio
+        descricao,
+        responsavel,
+        observacoes,
+        data_manutencao,
+        ultima_recarga,
+        proxima_inspecao,
+        data_vencimento,
+        revisar_status // Novo campo para revisão de status
+    } = req.body;
+
+    // Verificação para garantir que todos os campos obrigatórios estão presentes
+    if (
+        !patrimonio ||
+        !descricao ||
+        !responsavel ||
+        !data_manutencao ||
+        !ultima_recarga ||
+        !proxima_inspecao ||
+        !data_vencimento
+    ) {
+        return res.status(400).json({ success: false, message: 'Todos os campos são obrigatórios' });
+    }
+
+    // 1. Inserir a manutenção no histórico de manutenção
+    const queryManutencao = `
+        INSERT INTO Historico_Manutencao (ID_Extintor, Data_Manutencao, Descricao, Responsavel_Manutencao, Observacoes)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+
+    // Executar a consulta para salvar a manutenção
+    db.query(queryManutencao, [
+        patrimonio,                // Referência ao campo Patrimonio como ID_Extintor
+        data_manutencao,
+        descricao,
+        responsavel,
+        observacoes || '',  // Observações podem ser nulas
+    ], (err, result) => {
+        if (err) {
+            console.error('Erro ao salvar manutenção: ' + err.stack);
+            return res.status(500).json({ success: false, message: 'Erro ao salvar manutenção' });
+        }
+
+        // 2. Agora, atualizamos os dados na tabela Extintores com as novas informações
+        const queryExtintores = `
+            UPDATE Extintores
+            SET Ultima_Recarga = ?, Proxima_Inspecao = ?, Data_Validade = ?
+            WHERE Patrimonio = ?
+        `;
+
+        // Atualizar as informações do extintor
+        db.query(queryExtintores, [
+            ultima_recarga,
+            proxima_inspecao,
+            data_vencimento,
+            patrimonio    // Usando Patrimonio aqui para atualizar o extintor correto
+        ], (err2, result2) => {
+            if (err2) {
+                console.error('Erro ao atualizar extintores: ' + err2.stack);
+                return res.status(500).json({ success: false, message: 'Erro ao atualizar extintores' });
+            }
+
+            // 3. Atualizar o status do extintor, se necessário
+            if (revisar_status) {
+                // Certifique-se de que o status "Ativo" existe na tabela Status_Extintor
+                const queryStatus = `
+                    SELECT id FROM Status_Extintor WHERE nome = 'Ativo'
+                `;
+
+                // Obter o ID do status 'Ativo'
+                db.query(queryStatus, [], (err3, result3) => {
+                    if (err3) {
+                        console.error('Erro ao buscar status: ' + err3.stack);
+                        return res.status(500).json({ success: false, message: 'Erro ao buscar status' });
+                    }
+
+                    if (result3.length > 0) {
+                        const status_id = result3[0].id;
+
+                        // Atualizar o status do extintor com o ID correto
+                        const queryUpdateStatus = `
+                            UPDATE Extintores
+                            SET status_id = ?
+                            WHERE Patrimonio = ?
+                        `;
+
+                        // Atualiza o status do extintor para 'Ativo'
+                        db.query(queryUpdateStatus, [status_id, patrimonio], (err4, result4) => {
+                            if (err4) {
+                                console.error('Erro ao atualizar status do extintor: ' + err4.stack);
+                                return res.status(500).json({ success: false, message: 'Erro ao atualizar status' });
+                            }
+
+                            // Se a manutenção, atualização do extintor e status forem bem-sucedidos
+                            res.status(200).json({ success: true, message: 'Manutenção salva, dados atualizados e status alterado com sucesso!' });
+                        });
+                    } else {
+                        // Se o status 'Ativo' não foi encontrado
+                        console.error('Status "Ativo" não encontrado na tabela Status_Extintor');
+                        return res.status(500).json({ success: false, message: 'Status "Ativo" não encontrado' });
+                    }
+                });
+            } else {
+                // Se não for necessário revisar o status, apenas finalize a operação
+                res.status(200).json({ success: true, message: 'Manutenção salva e dados atualizados com sucesso!' });
+            }
+        });
+    });
+});
+
 
 app.post('/upload', upload.single('image'), (req, res) => {
     if (!req.file) {
