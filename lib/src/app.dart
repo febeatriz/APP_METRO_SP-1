@@ -11,11 +11,11 @@ class App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'APLICATIVO GESTÃO DE EXTINTORES',
-      initialRoute: '/scan-qr',
-      // routes: {
-      //   '/': (context) => TelaLogin(),
-      //   '/scan-qr': (context) => ScannerQRCODE(),
-      // },
+      initialRoute: '/',
+      routes: {
+        '/': (context) => TelaLogin(),
+        '/scan-qr': (context) => ScannerQRCODE(),
+      },
       // Aqui configuramos a rota dinâmica para passar 'patrimonio' como argumento
       onGenerateRoute: (settings) {
         if (settings.name == '/info-extintor') {
