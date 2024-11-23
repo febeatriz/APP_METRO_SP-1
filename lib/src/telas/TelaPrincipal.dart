@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobilegestaoextintores/src/telas/Tela_Consulta.dart';
 import 'package:mobilegestaoextintores/src/telas/Tela_Manutencao.dart';
 import 'package:mobilegestaoextintores/src/telas/Tela_RegistrarExtintorManual.dart';
 import 'tela_configuracao.dart';
@@ -180,7 +181,11 @@ class TelaPrincipal extends StatelessWidget {
                       icon: Icons.search,
                       label: 'Consulta',
                       onTap: () {
-                        _navigateTo(context, 'Consulta');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => TelaConsultaExtintor()),
+                        );
                       },
                     ),
                     _buildIconButton(
