@@ -303,12 +303,11 @@ class _TelaConsultaExtintorState extends State<TelaConsultaExtintor> {
           'Última Recarga: ${formatDate(_extintorData!['Ultima_Recarga'])}',
           'Próxima Inspeção: ${formatDate(_extintorData!['Proxima_Inspecao'])}',
           'Status: ${_extintorData!['Status']}',
-          'QR Code:',
           'Observações: ${_extintorData!['Observacoes_Extintor']}',
         ]),
         const SizedBox(height: 20),
-        // Aqui adiciona o QR Code
-        _buildQrCode(_extintorData!['QRCode'] ?? "http://localhost/qr-code"),
+        // Exibir QR Code Salvo
+        _buildQrCode(_extintorData!['QRCode']),
         const SizedBox(height: 20),
         _buildDetailCard('Localização do Extintor', [
           'Área: ${_extintorData!['Localizacao_Area']}',
@@ -333,22 +332,36 @@ class _TelaConsultaExtintorState extends State<TelaConsultaExtintor> {
     );
   }
 
-  Widget _buildQrCode(String qrCodeUrl) {
-    return QrImageView(
-      data: qrCodeUrl, // Passando a URL do QR Code
-      version: QrVersions.auto, // Versão do QR Code
-      size: 200.0, // Tamanho do QR Code
-      errorStateBuilder: (context, error) {
-        return Center(
+  Widget _buildQrCode(String? qrCodeUrl) {
+    if (qrCodeUrl == null || qrCodeUrl.isEmpty) {
+      return const Center(
+        child: Text(
+          "QR Code não disponível",
+          style: TextStyle(fontSize: 16, color: Colors.red),
+        ),
+      );
+    }
+
+    return Image.network(
+      qrCodeUrl,
+      height: 200.0,
+      width: 200.0,
+      errorBuilder: (context, error, stackTrace) {
+        return const Center(
           child: Text(
-            "Erro ao gerar QR Code",
-            textAlign: TextAlign.center,
+            "Erro ao carregar o QR Code",
+            style: TextStyle(fontSize: 16, color: Colors.red),
           ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(
+          child: CircularProgressIndicator(),
         );
       },
     );
   }
-
 
   Widget _buildDetailCard(String title, List<String> items) {
     return Card(

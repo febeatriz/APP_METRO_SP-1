@@ -447,9 +447,22 @@ app.get('/tipos-extintores', (req, res) => {
 });
 
 app.get('/localizacoes', (req, res) => {
-    const query = 'SELECT ID_Localizacao AS id, Area AS nome FROM Localizacoes';
+    const linhaId = req.query.linhaId;
+    if (!linhaId) {
+        return res.status(400).json({ success: false, message: 'Linha ID é obrigatório' });
+    }
 
-    db.query(query, (err, results) => {
+    const query = `
+  SELECT 
+    ID_Localizacao AS id, 
+    Area AS nome, 
+    Subarea AS subarea, 
+    Local_Detalhado AS local_detalhado 
+  FROM Localizacoes 
+  WHERE Linha_ID = ?
+`;
+
+    db.query(query, [linhaId], (err, results) => {
         if (err) {
             console.error('Erro ao consultar localizações:', err);
             return res.status(500).json({ success: false, message: 'Erro ao buscar localizações' });
@@ -458,6 +471,7 @@ app.get('/localizacoes', (req, res) => {
         res.json({ success: true, data: results });
     });
 });
+
 
 app.get('/linhas', (req, res) => {
     const query = 'SELECT * FROM Linhas';
@@ -471,315 +485,23 @@ app.get('/linhas', (req, res) => {
     });
 });
 
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
-class TelaConsultaExtintor extends StatefulWidget {
-  const TelaConsultaExtintor({Key? key}) : super(key: key);
-
-  @override
-  _TelaConsultaExtintorState createState() => _TelaConsultaExtintorState();
-}
-
-class _TelaConsultaExtintorState extends State<TelaConsultaExtintor> {
-  final TextEditingController _patrimonioController = TextEditingController();
-  String _patrimonio = "";
-  bool _isLoading = false;
-  bool _isFetchingPatrimonios = false; // Indica se estamos buscando a lista
-  Map<String, dynamic>? _extintorData;
-  String _errorMessage = "";
-  List<String> _patrimoniosDisponiveis = []; // Lista dinâmica de patrimônios
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchPatrimoniosDisponiveis();
-  }
-
-  Future<void> _fetchPatrimoniosDisponiveis() async {
-    setState(() {
-      _isFetchingPatrimonios = true;
-      _errorMessage = ''; // Clear previous error messages
-    });
-
-    try {
-      final url = Uri.parse('http://localhost:3001/patrimonio');
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success']) {
-          setState(() {
-            _patrimoniosDisponiveis =
-                List<String>.from(data['patrimonios'] ?? []);
-          });
-        } else {
-          setState(() {
-            _errorMessage = data['message'] ?? "Falha ao carregar patrimônios.";
-          });
+app.get('/patrimonio', (req, res) => {
+    const query = 'SELECT patrimonio FROM extintores';
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Erro na consulta SQL:', err);
+            res.status(500).json({ success: false, message: 'Erro na consulta ao banco de dados' });
+            return;
         }
-      } else {
-        setState(() {
-          _errorMessage =
-              "Erro ao carregar patrimônios. Tente novamente mais tarde.";
+
+        console.log('Patrimônios encontrados:', results);  // Adicione este log
+        const patrimônios = results.map(row => row.patrimonio);
+        res.json({
+            success: true,
+            patrimônios: patrimônios,
         });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = "Erro na conexão. Verifique sua internet.";
-      });
-    } finally {
-      setState(() {
-        _isFetchingPatrimonios = false;
-      });
-    }
-  }
-
-  Future<void> _buscarExtintor() async {
-    if (_patrimonio.isEmpty) {
-      setState(() {
-        _errorMessage = "Por favor, insira o número do patrimônio.";
-      });
-      return;
-    }
-
-    FocusScope.of(context).unfocus(); // Fecha o teclado
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = "";
     });
-
-    final url = Uri.parse('http://localhost:3001/extintor/$_patrimonio');
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['success']) {
-          setState(() {
-            _extintorData = data['extintor'];
-          });
-        } else {
-          setState(() {
-            _errorMessage = "Extintor não encontrado.";
-          });
-        }
-      } else {
-        setState(() {
-          _errorMessage =
-              "Erro ao buscar extintor. Tente novamente mais tarde.";
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = "Erro na conexão. Verifique sua internet.";
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.fire_extinguisher, color: Colors.white),
-            const SizedBox(width: 8),
-            const Text(
-              'Consulta de Extintor',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF011689),
-        centerTitle: true,
-        elevation: 4,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildInputSection(),
-              if (_errorMessage.isNotEmpty) _buildErrorMessage(),
-              if (_extintorData != null) _buildExtintorDetails(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_isFetchingPatrimonios)
-            const Center(
-              child: CircularProgressIndicator(),
-            )
-          else if (_patrimoniosDisponiveis.isEmpty)
-            const Center(
-              child: Text(
-                'Nenhum patrimônio disponível.',
-                style: TextStyle(fontSize: 16, color: Colors.red),
-              ),
-            )
-          else
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Selecione o Patrimônio',
-                labelStyle: const TextStyle(color: Color(0xFF011689)),
-                filled: true,
-                fillColor: const Color(0xFFF7F9FC),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              items: _patrimoniosDisponiveis.map((String patrimonio) {
-                return DropdownMenuItem<String>(
-                  value: patrimonio,
-                  child: Text(patrimonio),
-                );
-              }).toList(),
-              onChanged: (String? value) {
-                if (value != null) {
-                  setState(() {
-                    _patrimonio = value;
-                    _patrimonioController.text = value; // Preenche o campo
-                  });
-                }
-              },
-            ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _patrimonioController,
-            decoration: InputDecoration(
-              labelText: 'Ou digite o número do Patrimônio',
-              labelStyle: const TextStyle(color: Color(0xFF011689)),
-              filled: true,
-              fillColor: const Color(0xFFF7F9FC),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
-              hintText: 'Digite ou selecione acima',
-              prefixIcon: const Icon(Icons.edit, color: Color(0xFF011689)),
-            ),
-            keyboardType: TextInputType.number,
-            onChanged: (value) {
-              setState(() {
-                _patrimonio = value;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _buscarExtintor,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF011689),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 3,
-            ),
-            child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
-                    'Buscar Extintor',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorMessage() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Text(
-        _errorMessage,
-        style: const TextStyle(color: Colors.red, fontSize: 14),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _buildExtintorDetails() {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        _buildCard('Informações do Extintor', [
-          'Patrimônio: ${_extintorData!['Patrimonio']}',
-          'Capacidade: ${_extintorData!['Capacidade']}',
-          'Tipo: ${_extintorData!['Tipo']}',
-          'Status: ${_extintorData!['Status']}',
-          'Localização: ${_extintorData!['Localizacao_Area']}',
-          'Subárea: ${_extintorData!['Localizacao_Subarea']}',
-          'Local Detalhado: ${_extintorData!['Localizacao_Detalhada']}',
-        ]),
-        const SizedBox(height: 20),
-        _buildCard('Histórico de Manutenção', [
-          'Data da Manutenção: ${_extintorData!['Data_Manutencao']}',
-          'Responsável: ${_extintorData!['Responsavel_Manutencao']}',
-          'Descrição: ${_extintorData!['Manutencao_Descricao']}',
-          'Observações: ${_extintorData!['Manutencao_Observacoes']}',
-        ]),
-      ],
-    );
-  }
-
-  Widget _buildCard(String title, List<String> items) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const Divider(),
-            ...items.map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Text(item, style: const TextStyle(fontSize: 16)),
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-}
+});
 
 app.get('/extintor/:patrimonio', (req, res) => {
     const patrimonio = req.params.patrimonio;
