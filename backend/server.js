@@ -136,6 +136,10 @@ const atualizarStatusExtintor = async (idExtintor) => {
         console.error('Erro ao atualizar o status:', err);
     }
 };
+
+
+const moment = require('moment');  // Adiciona o moment para formatar as datas
+
 app.post('/registrar_extintor', async (req, res) => {
     const {
         patrimonio,
@@ -152,15 +156,21 @@ app.post('/registrar_extintor', async (req, res) => {
         observacoes
     } = req.body;
 
+    // Converte as datas para o formato correto 'YYYY-MM-DD'
+    const dataFabricacaoFormatada = moment(data_fabricacao, 'DD/MM/YYYY').format('YYYY-MM-DD');
+    const dataValidadeFormatada = moment(data_validade, 'DD/MM/YYYY').format('YYYY-MM-DD');
+    const ultimaRecargaFormatada = moment(ultima_recarga, 'DD/MM/YYYY').format('YYYY-MM-DD');
+    const proximaInspecaoFormatada = moment(proxima_inspecao, 'DD/MM/YYYY').format('YYYY-MM-DD');
+
     const extintor = {
         patrimonio,
         tipo_id,
         capacidade,
         codigo_fabricante,
-        data_fabricacao,
-        data_validade,
-        ultima_recarga,
-        proxima_inspecao,
+        data_fabricacao: dataFabricacaoFormatada,
+        data_validade: dataValidadeFormatada,
+        ultima_recarga: ultimaRecargaFormatada,
+        proxima_inspecao: proximaInspecaoFormatada,
         status,
         linha_id,
         id_localizacao,
@@ -179,7 +189,7 @@ app.post('/registrar_extintor', async (req, res) => {
         `;
 
         db.query(query, [
-            patrimonio, tipo_id, capacidade, codigo_fabricante, data_fabricacao, data_validade, ultima_recarga, proxima_inspecao, status, linha_id, id_localizacao, qrCodeUrl, observacoes
+            patrimonio, tipo_id, capacidade, codigo_fabricante, dataFabricacaoFormatada, dataValidadeFormatada, ultimaRecargaFormatada, proximaInspecaoFormatada, status, linha_id, id_localizacao, qrCodeUrl, observacoes
         ], (err, result) => {
             if (err) {
                 console.error('Erro ao inserir no banco de dados:', err);
@@ -196,6 +206,68 @@ app.post('/registrar_extintor', async (req, res) => {
         res.status(500).json({ success: false, error: 'Erro ao gerar o QR code.' });
     }
 });
+
+
+// app.post('/registrar_extintor', async (req, res) => {
+//     const {
+//         patrimonio,
+//         tipo_id,
+//         capacidade,
+//         codigo_fabricante,
+//         data_fabricacao,
+//         data_validade,
+//         ultima_recarga,
+//         proxima_inspecao,
+//         status,
+//         linha_id,
+//         id_localizacao,
+//         observacoes
+//     } = req.body;
+
+//     const extintor = {
+//         patrimonio,
+//         tipo_id,
+//         capacidade,
+//         codigo_fabricante,
+//         data_fabricacao,
+//         data_validade,
+//         ultima_recarga,
+//         proxima_inspecao,
+//         status,
+//         linha_id,
+//         id_localizacao,
+//         observacoes,
+//     };
+
+//     try {
+//         // Gera o QR code e salva
+//         const qrCodeUrl = await gerarSalvarQRCode(JSON.stringify(extintor), patrimonio);
+
+//         // Insere o extintor no banco de dados
+//         const query = `
+//             INSERT INTO Extintores 
+//             (Patrimonio, Tipo_ID, Capacidade, Codigo_Fabricante, Data_Fabricacao, Data_Validade, Ultima_Recarga, Proxima_Inspecao, status_id, Linha_ID, ID_Localizacao, QR_Code, Observacoes) 
+//             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//         `;
+
+//         db.query(query, [
+//             patrimonio, tipo_id, capacidade, codigo_fabricante, data_fabricacao, data_validade, ultima_recarga, proxima_inspecao, status, linha_id, id_localizacao, qrCodeUrl, observacoes
+//         ], (err, result) => {
+//             if (err) {
+//                 console.error('Erro ao inserir no banco de dados:', err);
+//                 return res.status(500).json({ success: false, message: 'Erro ao registrar o extintor no banco de dados.' });
+//             }
+
+//             // Após inserir, atualiza o status do extintor
+//             atualizarStatusExtintor(patrimonio);
+
+//             res.json({ success: true, qrCodeUrl });
+//         });
+
+//     } catch (err) {
+//         res.status(500).json({ success: false, error: 'Erro ao gerar o QR code.' });
+//     }
+// });
 
 app.get('/extintores', (req, res) => {
     const query = 'SELECT Patrimonio, Tipo_ID FROM Extintores';
