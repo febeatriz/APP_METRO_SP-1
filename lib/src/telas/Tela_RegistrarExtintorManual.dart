@@ -2,8 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw; // Add this line
+import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart'; // Para usar o método rootBundle para carregar arquivos de forma assíncrona
 
 class TelaRegistrarExtintor extends StatefulWidget {
   const TelaRegistrarExtintor({super.key});
@@ -237,6 +241,37 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
     );
   }
 
+  Future<void> _printQRCode() async {
+    if (_qrCodeUrl == null) return;
+
+    try {
+      final response =
+          await http.get(Uri.parse(_qrCodeUrl!)); // Baixando a imagem
+      if (response.statusCode == 200) {
+        final imageBytes =
+            response.bodyBytes; // A imagem é obtida como um Uint8List
+        final pdf = pw.Document();
+
+        pdf.addPage(pw.Page(
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Image(pw.MemoryImage(
+                  imageBytes)), // Usando MemoryImage para carregar a imagem
+            );
+          },
+        ));
+
+        await Printing.layoutPdf(onLayout: (PdfPageFormat format) async {
+          return pdf.save();
+        });
+      } else {
+        _showErrorDialog('Falha ao carregar o QR Code.');
+      }
+    } catch (e) {
+      _showErrorDialog('Erro ao tentar baixar a imagem: $e');
+    }
+  }
+
   Widget _buildDropdown({
     required String label,
     required List<Map<String, dynamic>> items,
@@ -245,12 +280,16 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
     String Function(Map<String, dynamic>)? displayItem,
   }) {
     return DropdownButtonFormField(
+      isExpanded:
+          true, // Garante que o dropdown ocupe toda a largura disponível
       value: value,
       items: items
           .map((item) => DropdownMenuItem(
                 value: item['id'].toString(),
                 child: Text(
-                    displayItem != null ? displayItem(item) : item['nome']),
+                  displayItem != null ? displayItem(item) : item['nome'],
+                  overflow: TextOverflow.ellipsis, // Para truncar o texto longo
+                ),
               ))
           .toList(),
       onChanged: onChanged,
@@ -274,7 +313,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF011689),
-        title: const Text('Registrar Extintor'), 
+        title: const Text('Registrar Extintor'),
         foregroundColor: Colors.white, // Cor do texto do título
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -346,39 +385,56 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
                       isDate: true,
                     ),
                     const SizedBox(height: 12),
-                    _buildDropdown(
-                      label: 'Linha',
-                      items: linhas,
-                      value: _linhaSelecionada,
-                      onChanged: (value) {
-                        setState(() {
-                          _linhaSelecionada = value;
-                          fetchLocalizacoes(value!);
-                        });
-                      },
-                      displayItem: (item) => item['nome'],
+                    SizedBox(
+                      child: _buildDropdown(
+                        label: 'Linha',
+                        items: linhas,
+                        value: _linhaSelecionada,
+                        onChanged: (value) {
+                          setState(() {
+                            _linhaSelecionada = value;
+                            _localizacaoSelecionada =
+                                null; // Limpar a seleção de localização
+                            fetchLocalizacoes(
+                                value!); // Atualiza as localizações
+                          });
+                        },
+                        displayItem: (item) => item['nome'],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     _buildDropdown(
                       label: 'Localização',
                       items: localizacoesFiltradas,
                       value: _localizacaoSelecionada,
-                      onChanged: (value) =>
-                          setState(() => _localizacaoSelecionada = value),
+                      onChanged: (value) {
+                        setState(() {
+                          // Verifique se a localização selecionada ainda está na lista de itens
+                          if (!localizacoesFiltradas
+                              .any((item) => item['id'].toString() == value)) {
+                            _localizacaoSelecionada =
+                                null; // Limpar valor se não encontrado
+                          } else {
+                            _localizacaoSelecionada = value;
+                          }
+                        });
+                      },
                       displayItem: (item) =>
                           '${item['subarea']} - ${item['local_detalhado']}',
                     ),
                     const SizedBox(height: 12),
-                    _buildDropdown(
-                      label: 'Status',
-                      items: status,
-                      value: _statusSelecionado,
-                      onChanged: (value) {
-                        setState(() {
-                          _statusSelecionado = value;
-                        });
-                      },
-                      displayItem: (item) => item['nome'],
+                    SizedBox(
+                      child: _buildDropdown(
+                        label: 'Status',
+                        items: status,
+                        value: _statusSelecionado,
+                        onChanged: (value) {
+                          setState(() {
+                            _statusSelecionado = value;
+                          });
+                        },
+                        displayItem: (item) => item['nome'],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     _buildTextField(
@@ -402,17 +458,24 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    if (_qrCodeUrl != null) ...[
-                      Text('QR Code gerado com sucesso!'),
-                      Image.network(_qrCodeUrl!),
-                      ElevatedButton(
-                        onPressed: () {
-                          Share.share(
-                              'Confira o QR Code do extintor: $_qrCodeUrl');
-                        },
-                        child: const Text('Compartilhar QR Code'),
+                    if (_qrCodeUrl != null)
+                      Column(
+                        children: [
+                          Image.network(_qrCodeUrl!),
+                          ElevatedButton(
+                            onPressed: _printQRCode,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF011689), // Azul
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Imprimir QR Code'),
+                          ),
+                        ],
                       ),
-                    ],
                   ],
                 ),
               ),
