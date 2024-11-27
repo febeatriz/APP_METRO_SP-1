@@ -1,14 +1,15 @@
-const express = require('express');
+const fs = require('fs'); // Para manipular o sistema de arquivos
 const mysql = require('mysql2');
-const bodyParser = require('body-parser');
 const cors = require('cors');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
+const PDFDocument = require('pdfkit');
+const express = require('express');
+const bodyParser = require('body-parser');
 const QRCode = require('qrcode');
+const path = require('path');
+const moment = require('moment');
 const app = express();
-const PORT = 3001;
 
+// Configuração do banco de dados
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -24,55 +25,136 @@ db.connect((err) => {
     console.log('Conectado ao banco de dados MySQL');
 });
 
-// Middleware para CORS
+// Middleware
 app.use(cors({
-    origin: '*',  // Aceita requisições de qualquer origem
-    methods: 'GET, POST, PUT, DELETE', // Métodos permitidos
-    allowedHeaders: 'Content-Type, Authorization', // Cabeçalhos permitidos
+    origin: '*',
+    methods: 'GET, POST, PUT, DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
 }));
-
-
 app.use(bodyParser.json());
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadsPath);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
-});
-const upload = multer({ storage: storage });
+// Certifique-se de que a pasta "uploads" exista
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
 
-app.get('/qr-code/:patrimonio', (req, res) => {
-    const patrimonio = req.params.patrimonio;
-    const qrCodePath = path.join(__dirname, 'uploads', 'qrcodes', `${patrimonio}.png`);
-    if (fs.existsSync(qrCodePath)) {
-        res.sendFile(qrCodePath);
-    } else {
-        res.status(404).json({ success: false, message: 'QR Code não encontrado' });
-    }
-});
+const gerarSalvarQRCode = async (patrimonio) => {
+    // Gera um link único para o QR Code, que será redirecionado para a geração do PDF
+    const qrCodeData = `http://localhost:3001/pdf/${patrimonio}`; // Link para o PDF
+    const qrCodePath = `uploads/${patrimonio}-qrcode.png`;
 
-const uploadsPath = path.join(__dirname, 'uploads', 'qrcodes');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/uploads/qrcodes', express.static(uploadsPath));
+    await QRCode.toFile(qrCodePath, qrCodeData);  // Gera o QR Code com a URL para o PDF
+    return qrCodePath;
+};
 
-const gerarSalvarQRCode = async (data, nomeArquivo) => {
+// Endpoint para registrar o extintor e gerar o QR Code
+app.post('/registrar_extintor', async (req, res) => {
+    const {
+        patrimonio,
+        tipo_id,
+        capacidade,
+        codigo_fabricante,
+        data_fabricacao,
+        data_validade,
+        ultima_recarga,
+        proxima_inspecao,
+        status,
+        linha_id,
+        id_localizacao,
+        observacoes,
+    } = req.body;
+
     try {
-        const caminhoImagem = path.join(uploadsPath, `${nomeArquivo}.png`);
+        // Formatar datas
+        const dataFabricacao = moment(data_fabricacao, 'DD/MM/YYYY').format('YYYY-MM-DD');
+        const dataValidade = moment(data_validade, 'DD/MM/YYYY').format('YYYY-MM-DD');
+        const ultimaRecarga = moment(ultima_recarga, 'DD/MM/YYYY').format('YYYY-MM-DD');
+        const proximaInspecao = moment(proxima_inspecao, 'DD/MM/YYYY').format('YYYY-MM-DD');
 
-        if (!fs.existsSync(path.dirname(caminhoImagem))) {
-            fs.mkdirSync(path.dirname(caminhoImagem), { recursive: true });
+        // Gerar o QR Code
+        const qrCodePath = await gerarSalvarQRCode(patrimonio);
+
+        // Inserir no banco de dados
+        const query = `
+            INSERT INTO Extintores 
+            (Patrimonio, Tipo_ID, Capacidade, Codigo_Fabricante, Data_Fabricacao, Data_Validade, Ultima_Recarga, Proxima_Inspecao, status_id, Linha_ID, ID_Localizacao, QR_Code, Observacoes) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        db.query(query, [
+            patrimonio, tipo_id, capacidade, codigo_fabricante, dataFabricacao, dataValidade, ultimaRecarga, proximaInspecao, status, linha_id, id_localizacao, qrCodePath, observacoes,
+        ], (err) => {
+            if (err) {
+                console.error('Erro ao inserir no banco de dados:', err);
+                return res.status(500).json({ success: false, message: 'Erro ao registrar o extintor.' });
+            }
+
+            res.json({ success: true, qrCodeUrl: `http://localhost:3001/uploads/${patrimonio}-qrcode.png` });
+        });
+    } catch (err) {
+        console.error('Erro ao processar registro:', err);
+        res.status(500).json({ success: false, error: 'Erro ao registrar o extintor.' });
+    }
+});
+
+// Endpoint para gerar o PDF
+app.get('/pdf/:patrimonio', (req, res) => {
+    const patrimonio = req.params.patrimonio;
+
+    db.execute('SELECT * FROM extintores WHERE Patrimonio = ?', [patrimonio], async (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(404).send('Extintor não encontrado.');
         }
 
-        await QRCode.toFile(caminhoImagem, data);
-        return `http://localhost:3001/uploads/qrcodes/${nomeArquivo}.png`;
-    } catch (err) {
-        console.error('Erro ao gerar o QR code:', err);
-        throw err;
-    }
-};
+        const data = results[0];
+
+        // Buscar o nome do Tipo
+        const [tipoResult] = await db.promise().query('SELECT tipo FROM tipos_extintores WHERE id = ?', [data.Tipo_ID]);
+        const tipoNome = tipoResult.length > 0 ? tipoResult[0].tipo : 'Tipo não encontrado';
+
+        // Buscar o nome do Status
+        const [statusResult] = await db.promise().query('SELECT nome FROM status_extintor WHERE id = ?', [data.status_id]);
+        const statusNome = statusResult.length > 0 ? statusResult[0].nome : 'Status não encontrado';
+
+        // Buscar o nome da Linha
+        const [linhaResult] = await db.promise().query('SELECT nome FROM linhas WHERE id = ?', [data.Linha_ID]);
+        const linhaNome = linhaResult.length > 0 ? linhaResult[0].nome : 'Linha não encontrada';
+
+        // Buscar a Localização
+        const [localizacaoResult] = await db.promise().query('SELECT Area, Subarea, Local_Detalhado FROM localizacoes WHERE ID_Localizacao = ?', [data.ID_Localizacao]);
+        const localizacaoNome = localizacaoResult.length > 0 ? `${localizacaoResult[0].Area}, ${localizacaoResult[0].Subarea}, ${localizacaoResult[0].Local_Detalhado}` : 'Localização não encontrada';
+
+        // Formatar as datas usando Moment.js
+        const dataFabricacaoFormatada = moment(data.Data_Fabricacao).format('DD/MM/YYYY');
+        const dataValidadeFormatada = moment(data.Data_Validade).format('DD/MM/YYYY');
+        const ultimaRecargaFormatada = moment(data.Ultima_Recarga).format('DD/MM/YYYY');
+        const proximaInspecaoFormatada = moment(data.Proxima_Inspecao).format('DD/MM/YYYY');
+
+        // Criar o PDF dinamicamente
+        const doc = new PDFDocument();
+        res.setHeader('Content-Type', 'application/pdf');
+        doc.pipe(res);
+
+        doc.fontSize(12)
+            .text(`Patrimônio: ${data.Patrimonio}`)
+            .text(`Tipo: ${tipoNome}`) // Exibir o nome do tipo
+            .text(`Capacidade: ${data.Capacidade}`)
+            .text(`Código Fabricante: ${data.Codigo_Fabricante}`)
+            .text(`Data de Fabricação: ${dataFabricacaoFormatada}`) // Exibir a data formatada
+            .text(`Data de Validade: ${dataValidadeFormatada}`) // Exibir a data formatada
+            .text(`Última Recarga: ${ultimaRecargaFormatada}`) // Exibir a data formatada
+            .text(`Próxima Inspeção: ${proximaInspecaoFormatada}`) // Exibir a data formatada
+            .text(`Linha: ${linhaNome}`) // Exibir o nome da linha
+            .text(`Localização: ${localizacaoNome}`) // Exibir o nome da localização
+            .text(`Status: ${statusNome}`) // Exibir o nome do status
+            .text(`Observações: ${data.Observacoes}`);
+
+        doc.end();
+    });
+});
+
+// Servir arquivos estáticos
+app.use('/uploads', express.static(uploadsDir));
 
 const atualizarStatusExtintor = async (idExtintor) => {
     try {
@@ -136,138 +218,6 @@ const atualizarStatusExtintor = async (idExtintor) => {
         console.error('Erro ao atualizar o status:', err);
     }
 };
-
-
-const moment = require('moment');  // Adiciona o moment para formatar as datas
-
-app.post('/registrar_extintor', async (req, res) => {
-    const {
-        patrimonio,
-        tipo_id,
-        capacidade,
-        codigo_fabricante,
-        data_fabricacao,
-        data_validade,
-        ultima_recarga,
-        proxima_inspecao,
-        status,
-        linha_id,
-        id_localizacao,
-        observacoes
-    } = req.body;
-
-    // Converte as datas para o formato correto 'YYYY-MM-DD'
-    const dataFabricacaoFormatada = moment(data_fabricacao, 'DD/MM/YYYY').format('YYYY-MM-DD');
-    const dataValidadeFormatada = moment(data_validade, 'DD/MM/YYYY').format('YYYY-MM-DD');
-    const ultimaRecargaFormatada = moment(ultima_recarga, 'DD/MM/YYYY').format('YYYY-MM-DD');
-    const proximaInspecaoFormatada = moment(proxima_inspecao, 'DD/MM/YYYY').format('YYYY-MM-DD');
-
-    const extintor = {
-        patrimonio,
-        tipo_id,
-        capacidade,
-        codigo_fabricante,
-        data_fabricacao: dataFabricacaoFormatada,
-        data_validade: dataValidadeFormatada,
-        ultima_recarga: ultimaRecargaFormatada,
-        proxima_inspecao: proximaInspecaoFormatada,
-        status,
-        linha_id,
-        id_localizacao,
-        observacoes,
-    };
-
-    try {
-        // Gera o QR code e salva
-        const qrCodeUrl = await gerarSalvarQRCode(JSON.stringify(extintor), patrimonio);
-
-        // Insere o extintor no banco de dados
-        const query = `
-            INSERT INTO Extintores 
-            (Patrimonio, Tipo_ID, Capacidade, Codigo_Fabricante, Data_Fabricacao, Data_Validade, Ultima_Recarga, Proxima_Inspecao, status_id, Linha_ID, ID_Localizacao, QR_Code, Observacoes) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        db.query(query, [
-            patrimonio, tipo_id, capacidade, codigo_fabricante, dataFabricacaoFormatada, dataValidadeFormatada, ultimaRecargaFormatada, proximaInspecaoFormatada, status, linha_id, id_localizacao, qrCodeUrl, observacoes
-        ], (err, result) => {
-            if (err) {
-                console.error('Erro ao inserir no banco de dados:', err);
-                return res.status(500).json({ success: false, message: 'Erro ao registrar o extintor no banco de dados.' });
-            }
-
-            // Após inserir, atualiza o status do extintor
-            atualizarStatusExtintor(patrimonio);
-
-            res.json({ success: true, qrCodeUrl });
-        });
-
-    } catch (err) {
-        res.status(500).json({ success: false, error: 'Erro ao gerar o QR code.' });
-    }
-});
-
-
-// app.post('/registrar_extintor', async (req, res) => {
-//     const {
-//         patrimonio,
-//         tipo_id,
-//         capacidade,
-//         codigo_fabricante,
-//         data_fabricacao,
-//         data_validade,
-//         ultima_recarga,
-//         proxima_inspecao,
-//         status,
-//         linha_id,
-//         id_localizacao,
-//         observacoes
-//     } = req.body;
-
-//     const extintor = {
-//         patrimonio,
-//         tipo_id,
-//         capacidade,
-//         codigo_fabricante,
-//         data_fabricacao,
-//         data_validade,
-//         ultima_recarga,
-//         proxima_inspecao,
-//         status,
-//         linha_id,
-//         id_localizacao,
-//         observacoes,
-//     };
-
-//     try {
-//         // Gera o QR code e salva
-//         const qrCodeUrl = await gerarSalvarQRCode(JSON.stringify(extintor), patrimonio);
-
-//         // Insere o extintor no banco de dados
-//         const query = `
-//             INSERT INTO Extintores 
-//             (Patrimonio, Tipo_ID, Capacidade, Codigo_Fabricante, Data_Fabricacao, Data_Validade, Ultima_Recarga, Proxima_Inspecao, status_id, Linha_ID, ID_Localizacao, QR_Code, Observacoes) 
-//             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-//         `;
-
-//         db.query(query, [
-//             patrimonio, tipo_id, capacidade, codigo_fabricante, data_fabricacao, data_validade, ultima_recarga, proxima_inspecao, status, linha_id, id_localizacao, qrCodeUrl, observacoes
-//         ], (err, result) => {
-//             if (err) {
-//                 console.error('Erro ao inserir no banco de dados:', err);
-//                 return res.status(500).json({ success: false, message: 'Erro ao registrar o extintor no banco de dados.' });
-//             }
-
-//             // Após inserir, atualiza o status do extintor
-//             atualizarStatusExtintor(patrimonio);
-
-//             res.json({ success: true, qrCodeUrl });
-//         });
-
-//     } catch (err) {
-//         res.status(500).json({ success: false, error: 'Erro ao gerar o QR code.' });
-//     }
-// });
 
 app.get('/extintores', (req, res) => {
     const query = 'SELECT Patrimonio, Tipo_ID FROM Extintores';
@@ -392,35 +342,6 @@ app.post('/salvar_manutencao', (req, res) => {
                 res.status(200).json({ success: true, message: 'Manutenção salva e dados atualizados com sucesso!' });
             }
         });
-    });
-});
-
-
-app.post('/upload', upload.single('image'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: 'Nenhuma imagem enviada' });
-    }
-
-    const usuarioId = req.body.usuario_id; // ID do usuário passado no campo "usuario_id"
-    if (!usuarioId) {
-        return res.status(400).json({ success: false, message: 'Usuário não especificado' });
-    }
-
-    const imagem = req.file.buffer; // O conteúdo da imagem que foi enviado
-
-    // Atualizando o banco de dados com a imagem
-    const query = 'UPDATE usuarios SET foto_perfil = ? WHERE id = ?';
-    db.query(query, [imagem, usuarioId], (err, result) => {
-        if (err) {
-            console.error('Erro ao salvar a imagem no banco de dados:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao salvar a imagem' });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
-        }
-
-        res.json({ success: true, message: 'Imagem salva com sucesso' });
     });
 });
 
@@ -627,6 +548,7 @@ app.get('/extintor/:patrimonio', (req, res) => {
 });
 
 
-app.listen(PORT, () => {
+const PORT = 3001;
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });

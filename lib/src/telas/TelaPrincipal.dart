@@ -146,7 +146,7 @@ class TelaPrincipal extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
-                                  const TelaRegistrarExtintor()),
+                                   TelaRegistrarExtintor()),
                         );
                       },
                     ),
