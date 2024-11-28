@@ -207,12 +207,18 @@ class _ManutencaoExtintorPageState extends State<ManutencaoExtintorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Histórico de Manutenção")),
+      appBar: AppBar(
+        title: Text("Histórico de Manutenção", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD9D9D9))),
+        backgroundColor: const Color(0xFF011689),
+        centerTitle: true,
+        elevation: 4,
+        iconTheme: const IconThemeData(color: Color(0xFFD9D9D9)),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: ListView(
           children: [
-            DropdownButton<int>(
+            DropdownButtonFormField<int>(
               value: idExtintor,
               hint: Text("Selecione o Extintor"),
               onChanged: (int? newValue) {
@@ -227,18 +233,32 @@ class _ManutencaoExtintorPageState extends State<ManutencaoExtintorPage> {
                 );
               }).toList(),
             ),
+            SizedBox(height: 16),
             TextField(
               controller: descricaoController,
-              decoration: InputDecoration(labelText: 'Descrição da Manutenção'),
+              decoration: InputDecoration(
+                labelText: 'Descrição da Manutenção',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+              ),
             ),
+            SizedBox(height: 16),
             TextField(
               controller: responsavelController,
-              decoration:
-                  InputDecoration(labelText: 'Responsável pela Manutenção'),
+              decoration: InputDecoration(
+                labelText: 'Responsável pela Manutenção',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+              ),
             ),
+            SizedBox(height: 16),
             TextField(
               controller: observacoesController,
-              decoration: InputDecoration(labelText: 'Observações'),
+              decoration: InputDecoration(
+                labelText: 'Observações',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+              ),
             ),
             SizedBox(height: 16),
             Row(

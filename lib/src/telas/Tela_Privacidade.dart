@@ -15,6 +15,8 @@ class TelaPrivacidade extends StatelessWidget {
           ),
         ),
         backgroundColor: const Color(0xFF011689),
+        centerTitle: true,
+        elevation: 4,
         iconTheme:
             const IconThemeData(color: Color(0xFFD9D9D9)), // Cor do ícone
       ),

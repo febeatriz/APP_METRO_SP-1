@@ -31,8 +31,10 @@ class _TelaReportarErroState extends State<TelaReportarErro> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reportar Erro', style: TextStyle(color: Color(0xFFD9D9D9))),
+        title: const Text('Reportar Erro', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD9D9D9))),
         backgroundColor: const Color(0xFF011689),
+        centerTitle: true,
+        elevation: 4,
         iconTheme: const IconThemeData(color: Color(0xFFD9D9D9)), // Cor da seta (ícone de voltar)
       ),
       body: Padding(
