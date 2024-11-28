@@ -1,7 +1,6 @@
 import 'package:mobilegestaoextintores/src/telas/Tela_Erro.dart';
 import 'package:mobilegestaoextintores/src/telas/Tela_Login.dart';
 import 'package:flutter/material.dart';
-import 'package:mobilegestaoextintores/src/telas/Tela_ModoNoturno.dart';
 import 'package:mobilegestaoextintores/src/telas/Tela_Privacidade.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'tela_conta.dart'; 
@@ -14,8 +13,10 @@ class TelaConfiguracao extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white, 
       appBar: AppBar(
-        title: const Text('Configuração'),
-        backgroundColor: const Color(0xFF004AAD),
+        title: const Text('Configuração', style: TextStyle(color: Color(0xFFD9D9D9))),
+        backgroundColor: const Color(0xFF011689),
+        iconTheme:
+            const IconThemeData(color: Color(0xFFD9D9D9)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -39,15 +40,7 @@ class TelaConfiguracao extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => TelaPrivacidade()));
               },
             ),
-            _buildConfigOption(
-              context,
-              icon: Icons.phone_android,
-              label: 'Tela',
-              onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => TelaModoNoturno()));
-              },
-            ),
+           
             _buildConfigOption(
               context,
               icon: Icons.bug_report,

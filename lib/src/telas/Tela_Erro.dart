@@ -32,7 +32,7 @@ class _TelaReportarErroState extends State<TelaReportarErro> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reportar Erro', style: TextStyle(color: Color(0xFFD9D9D9))),
-        backgroundColor: const Color(0xFF004AAD),
+        backgroundColor: const Color(0xFF011689),
         iconTheme: const IconThemeData(color: Color(0xFFD9D9D9)), // Cor da seta (ícone de voltar)
       ),
       body: Padding(
@@ -51,7 +51,9 @@ class _TelaReportarErroState extends State<TelaReportarErro> {
                 ),
                 child: const Text(
                   'Caso tenha identificado algum erro, reporte abaixo:',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18, // Tamanho do texto
+                  ),
                   textAlign: TextAlign.center, // Centraliza o texto no contêiner
                 ),
               ),
@@ -86,8 +88,8 @@ class _TelaReportarErroState extends State<TelaReportarErro> {
                   style: TextStyle(color: Color(0xFFD9D9D9)), // Cor do texto do botão
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF004AAD), // Cor de fundo do botão
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 40),
+                  backgroundColor: const Color(0xFF011689), // Cor de fundo do botão
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 60), // Aumentando o tamanho do botão
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -110,8 +112,6 @@ class _TelaReportarErroState extends State<TelaReportarErro> {
                 ),
               ),
             ),
-
-
           ],
         ),
       ),
