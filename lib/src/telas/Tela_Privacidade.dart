@@ -10,6 +10,7 @@ class TelaPrivacidade extends StatelessWidget {
         title: const Text(
           'Privacidade',
           style: TextStyle(
+            fontWeight : FontWeight.bold,
             color: Color(0xFFD9D9D9), // Cor do título
           ),
         ),
