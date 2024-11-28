@@ -29,7 +29,7 @@ class _ManutencaoExtintorPageState extends State<ManutencaoExtintorPage> {
 
   // Função para carregar os extintores do backend
   Future<void> _carregarExtintores() async {
-    final url = Uri.parse('http://10.0.2.2:3001/extintores');
+    final url = Uri.parse('http://localhost:3001/extintores');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -65,7 +65,7 @@ class _ManutencaoExtintorPageState extends State<ManutencaoExtintorPage> {
       return;
     }
 
-    final url = Uri.parse('http://10.0.2.2:3001/salvar_manutencao');
+    final url = Uri.parse('http://localhost:3001/salvar_manutencao');
     final response = await http.post(url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
@@ -148,7 +148,7 @@ class _ManutencaoExtintorPageState extends State<ManutencaoExtintorPage> {
 
   // Função para atualizar o status no servidor
   Future<void> _atualizarStatus() async {
-    final url = Uri.parse('http://10.0.2.2:3001/atualizar_status');
+    final url = Uri.parse('http://localhost:3001/atualizar_status');
     final response = await http.post(url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({

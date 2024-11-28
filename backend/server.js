@@ -41,7 +41,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 const gerarSalvarQRCode = async (patrimonio) => {
     // Gera um link único para o QR Code, que será redirecionado para a geração do PDF
-    const qrCodeData = `http://10.0.2.2:3001/pdf/${patrimonio}`; // Link para o PDF
+    const qrCodeData = `http://localhost:3001/pdf/${patrimonio}`; // Link para o PDF
     const qrCodePath = `uploads/${patrimonio}-qrcode.png`;
 
     await QRCode.toFile(qrCodePath, qrCodeData);  // Gera o QR Code com a URL para o PDF
@@ -89,7 +89,7 @@ app.post('/registrar_extintor', async (req, res) => {
                 return res.status(500).json({ success: false, message: 'Erro ao registrar o extintor.' });
             }
 
-            res.json({ success: true, qrCodeUrl: `http://10.0.2.2:3001/uploads/${patrimonio}-qrcode.png` });
+            res.json({ success: true, qrCodeUrl: `http://localhost:3001/uploads/${patrimonio}-qrcode.png` });
         });
     } catch (err) {
         console.error('Erro ao processar registro:', err);

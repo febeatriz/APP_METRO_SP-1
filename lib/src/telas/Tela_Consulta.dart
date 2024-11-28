@@ -42,7 +42,7 @@ class _TelaConsultaExtintorState extends State<TelaConsultaExtintor> {
     });
 
     try {
-      final url = Uri.parse('http://10.0.2.2:3001/patrimonio');
+      final url = Uri.parse('http://localhost:3001/patrimonio');
 
       final response = await http.get(url);
 
@@ -98,7 +98,7 @@ class _TelaConsultaExtintorState extends State<TelaConsultaExtintor> {
       _errorMessage = "";
     });
 
-    final url = Uri.parse('http://10.0.2.2:3001/extintor/$_patrimonio');
+    final url = Uri.parse('http://localhost:3001/extintor/$_patrimonio');
 
     try {
       final response = await http.get(url);
