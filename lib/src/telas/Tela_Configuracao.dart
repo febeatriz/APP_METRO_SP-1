@@ -1,5 +1,8 @@
+import 'package:mobilegestaoextintores/src/telas/Tela_Erro.dart';
 import 'package:mobilegestaoextintores/src/telas/Tela_Login.dart';
 import 'package:flutter/material.dart';
+import 'package:mobilegestaoextintores/src/telas/Tela_ModoNoturno.dart';
+import 'package:mobilegestaoextintores/src/telas/Tela_Privacidade.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'tela_conta.dart'; 
 
@@ -33,7 +36,7 @@ class TelaConfiguracao extends StatelessWidget {
               label: 'Privacidade',
               onTap: () {
                 Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => TelaConta()));
+                    MaterialPageRoute(builder: (context) => TelaPrivacidade()));
               },
             ),
             _buildConfigOption(
@@ -42,7 +45,7 @@ class TelaConfiguracao extends StatelessWidget {
               label: 'Tela',
               onTap: () {
                 Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => TelaConta()));
+                    MaterialPageRoute(builder: (context) => TelaModoNoturno()));
               },
             ),
             _buildConfigOption(
@@ -53,7 +56,7 @@ class TelaConfiguracao extends StatelessWidget {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => TelaConta()));
+                        builder: (context) => TelaReportarErro()));
               },
             ),
             const Divider(),
