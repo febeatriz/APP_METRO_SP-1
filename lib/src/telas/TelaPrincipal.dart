@@ -5,12 +5,9 @@ import 'package:mobilegestaoextintores/src/telas/Tela_RegistrarExtintorManual.da
 import 'tela_configuracao.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Substitua qualquer importação de 'flutter_web' relacionada a isso
-
 class TelaPrincipal extends StatelessWidget {
   const TelaPrincipal({super.key});
 
-  // Função para recuperar o nome do usuário das preferências compartilhadas
   Future<String?> _getNomeUsuario() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('usuario_nome');
@@ -21,21 +18,18 @@ class TelaPrincipal extends StatelessWidget {
     return FutureBuilder<String?>(
       future: _getNomeUsuario(),
       builder: (context, snapshot) {
-        // Exibir um indicador de carregamento enquanto o nome do usuário não é carregado
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // Se não houver dados ou o nome for nulo, exibir uma mensagem de erro
         if (!snapshot.hasData || snapshot.data == null) {
           return const Scaffold(
             body: Center(child: Text("Erro ao carregar o nome do usuário")),
           );
         }
 
-        // Recupera o nome do usuário do snapshot
         final nomeUsuario = snapshot.data!;
 
         return Scaffold(
@@ -71,9 +65,8 @@ class TelaPrincipal extends StatelessWidget {
               ),
             ],
           ),
-          body: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -134,9 +127,11 @@ class TelaPrincipal extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                const SizedBox(height: 100),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 20,
+                  runSpacing: 20,
                   children: [
                     _buildIconButton(
                       icon: Icons.fire_extinguisher,
@@ -145,17 +140,15 @@ class TelaPrincipal extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                   TelaRegistrarExtintor()),
+                              builder: (context) => TelaRegistrarExtintor()),
                         );
                       },
                     ),
                     _buildIconButton(
-                      icon: Icons.qr_code_scanner, // Ícone de QR Code Scanner
+                      icon: Icons.qr_code_scanner,
                       label: 'Scanner QR',
                       onTap: () {
-                        Navigator.pushNamed(context,
-                            '/scan-qr'); // Navegação para a tela de escanear QR
+                        Navigator.pushNamed(context, '/scan-qr');
                       },
                     ),
                     _buildIconButton(
@@ -165,8 +158,7 @@ class TelaPrincipal extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                   ManutencaoExtintorPage()),
+                              builder: (context) => ManutencaoExtintorPage()),
                         );
                       },
                     ),
@@ -209,13 +201,11 @@ class TelaPrincipal extends StatelessWidget {
     );
   }
 
-  // Função para construir o marcador de ponto
   Widget _buildBulletPoint(String text) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('• ',
-            style: TextStyle(fontSize: 18, color: Color(0xFF011689))),
+        const Text('• ', style: TextStyle(fontSize: 18, color: Color(0xFF011689))),
         Expanded(
           child: Text(
             text,
@@ -226,7 +216,6 @@ class TelaPrincipal extends StatelessWidget {
     );
   }
 
-  // Função para construir o ícone com label
   Widget _buildIconButton({
     required IconData icon,
     required String label,
@@ -235,6 +224,7 @@ class TelaPrincipal extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             padding: const EdgeInsets.all(14),
@@ -263,7 +253,6 @@ class TelaPrincipal extends StatelessWidget {
     );
   }
 
-  // Função para navegação entre telas
   void _navigateTo(BuildContext context, String pageName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Navegando para $pageName')),
