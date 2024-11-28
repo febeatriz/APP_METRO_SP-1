@@ -44,11 +44,9 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
   }
 
   Future<void> _fetchInitialData() async {
-    setState(() {
-    });
+    setState(() {});
     await Future.wait([fetchTipos(), fetchLinhas(), fetchStatus()]);
-    setState(() {
-    });
+    setState(() {});
   }
 
   Future<void> fetchTipos() async {
@@ -223,9 +221,9 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
       readOnly: isDate,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.black), // Preto
+        labelStyle: const TextStyle(color: Color(0xFF011689)), // Cor da label
         filled: true,
-        fillColor: const Color(0xFFF4F4F9), // Fundo claro
+        fillColor: const Color(0xFFF4F4F9), // Cor de fundo
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
@@ -233,39 +231,9 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
+      style: const TextStyle(color: Color(0xFF011689)), // Cor do texto
       onTap: isDate ? () => _selectDate(controller) : null,
     );
-  }
-
-  Future<void> _printQRCode() async {
-    if (_qrCodeUrl == null) return;
-
-    try {
-      final response =
-          await http.get(Uri.parse(_qrCodeUrl!)); // Baixando a imagem
-      if (response.statusCode == 200) {
-        final imageBytes =
-            response.bodyBytes; // A imagem é obtida como um Uint8List
-        final pdf = pw.Document();
-
-        pdf.addPage(pw.Page(
-          build: (pw.Context context) {
-            return pw.Center(
-              child: pw.Image(pw.MemoryImage(
-                  imageBytes)), // Usando MemoryImage para carregar a imagem
-            );
-          },
-        ));
-
-        await Printing.layoutPdf(onLayout: (PdfPageFormat format) async {
-          return pdf.save();
-        });
-      } else {
-        _showErrorDialog('Falha ao carregar o QR Code.');
-      }
-    } catch (e) {
-      _showErrorDialog('Erro ao tentar baixar a imagem: $e');
-    }
   }
 
   Widget _buildDropdown({
@@ -276,8 +244,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
     String Function(Map<String, dynamic>)? displayItem,
   }) {
     return DropdownButtonFormField(
-      isExpanded:
-          true, // Garante que o dropdown ocupe toda a largura disponível
+      isExpanded: true, // Garante que o dropdown ocupe toda a largura disponível
       value: value,
       items: items
           .map((item) => DropdownMenuItem(
@@ -285,21 +252,20 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
                 child: Text(
                   displayItem != null ? displayItem(item) : item['nome'],
                   overflow: TextOverflow.ellipsis, // Para truncar o texto longo
+                  style: const TextStyle(color: Color(0xFF011689)), // Cor do texto
                 ),
               ))
           .toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.black), // Preto
+        labelStyle: const TextStyle(color: Color(0xFF011689)), // Cor da label
         filled: true,
-        fillColor: const Color(0xFFF4F4F9),
+        fillColor: const Color(0xFFF4F4F9), // Cor de fundo
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
   }
@@ -308,174 +274,122 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF011689),
-        title: const Text('Registrar Extintor'),
-        foregroundColor: Colors.white, // Cor do texto do título
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          color: Colors.white,
-          onPressed: () => Navigator.pop(context),
+        title: const Text(
+          'Registrar Extintor',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD9D9D9)),
         ),
+        backgroundColor: const Color(0xFF011689), // Cor do app bar
+        iconTheme: const IconThemeData(color: Color(0xFFD9D9D9)), // Cor da seta de navegação
       ),
+
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
-          child: Center(
-            child: Card(
-              elevation: 5,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTextField(
+                controller: _patrimonioController,
+                label: 'Patrimônio',
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: <Widget>[
-                    _buildTextField(
-                      controller: _patrimonioController,
-                      label: 'Patrimônio',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDropdown(
-                      label: 'Tipo',
-                      items: tipos,
-                      value: _tipoSelecionado,
-                      onChanged: (value) {
-                        setState(() {
-                          _tipoSelecionado = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _capacidadeController,
-                      label: 'Capacidade (L)',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _codigoFabricanteController,
-                      label: 'Código do Fabricante',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _dataFabricacaoController,
-                      label: 'Data de Fabricação',
-                      isDate: true,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _dataValidadeController,
-                      label: 'Data de Validade',
-                      isDate: true,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _ultimaRecargaController,
-                      label: 'Última Recarga',
-                      isDate: true,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _proximaInspecaoController,
-                      label: 'Próxima Inspeção',
-                      isDate: true,
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      child: _buildDropdown(
-                        label: 'Linha',
-                        items: linhas,
-                        value: _linhaSelecionada,
-                        onChanged: (value) {
-                          setState(() {
-                            _linhaSelecionada = value;
-                            _localizacaoSelecionada =
-                                null; // Limpar a seleção de localização
-                            fetchLocalizacoes(
-                                value!); // Atualiza as localizações
-                          });
-                        },
-                        displayItem: (item) => item['nome'],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDropdown(
-                      label: 'Localização',
-                      items: localizacoesFiltradas,
-                      value: _localizacaoSelecionada,
-                      onChanged: (value) {
-                        setState(() {
-                          // Verifique se a localização selecionada ainda está na lista de itens
-                          if (!localizacoesFiltradas
-                              .any((item) => item['id'].toString() == value)) {
-                            _localizacaoSelecionada =
-                                null; // Limpar valor se não encontrado
-                          } else {
-                            _localizacaoSelecionada = value;
-                          }
-                        });
-                      },
-                      displayItem: (item) =>
-                          '${item['subarea']} - ${item['local_detalhado']}',
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      child: _buildDropdown(
-                        label: 'Status',
-                        items: status,
-                        value: _statusSelecionado,
-                        onChanged: (value) {
-                          setState(() {
-                            _statusSelecionado = value;
-                          });
-                        },
-                        displayItem: (item) => item['nome'],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _observacoesController,
-                      label: 'Observações',
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _registrarExtintor,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF011689), // Azul
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Registrar',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    if (_qrCodeUrl != null)
-                      Column(
-                        children: [
-                          Image.network(_qrCodeUrl!),
-                          ElevatedButton(
-                            onPressed: _printQRCode,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF011689), // Azul
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 32, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text('Imprimir QR Code'),
-                          ),
-                        ],
-                      ),
-                  ],
+              const SizedBox(height: 16),
+              _buildDropdown(
+                label: 'Tipo',
+                items: tipos,
+                value: _tipoSelecionado,
+                onChanged: (value) {
+                  setState(() {
+                    _tipoSelecionado = value;
+                  });
+                },
+                displayItem: (item) => item['nome'],
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _capacidadeController,
+                label: 'Capacidade',
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _codigoFabricanteController,
+                label: 'Código do Fabricante',
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _dataFabricacaoController,
+                label: 'Data de Fabricação',
+                isDate: true,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _dataValidadeController,
+                label: 'Data de Validade',
+                isDate: true,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _ultimaRecargaController,
+                label: 'Última Recarga',
+                isDate: true,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _proximaInspecaoController,
+                label: 'Próxima Inspeção',
+                isDate: true,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _observacoesController,
+                label: 'Observações',
+              ),
+              const SizedBox(height: 16),
+              _buildDropdown(
+                label: 'Linha',
+                items: linhas,
+                value: _linhaSelecionada,
+                onChanged: (value) {
+                  setState(() {
+                    _linhaSelecionada = value;
+                    fetchLocalizacoes(value!); // Atualiza localizações ao mudar a linha
+                  });
+                },
+                displayItem: (item) => item['nome'],
+              ),
+              const SizedBox(height: 16),
+              _buildDropdown(
+                label: 'Localização',
+                items: localizacoesFiltradas,
+                value: _localizacaoSelecionada,
+                onChanged: (value) {
+                  setState(() {
+                    _localizacaoSelecionada = value;
+                  });
+                },
+                displayItem: (item) => item['nome'],
+              ),
+              const SizedBox(height: 16),
+              _buildDropdown(
+                label: 'Status',
+                items: status,
+                value: _statusSelecionado,
+                onChanged: (value) {
+                  setState(() {
+                    _statusSelecionado = value;
+                  });
+                },
+                displayItem: (item) => item['nome'],
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _registrarExtintor,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF011689),
+                  minimumSize: const Size(double.infinity, 50),
                 ),
+                child: const Text('Registrar', style: TextStyle(color:Color(0xFFD9D9D9), fontSize:20) ),
               ),
-            ),
+            ],
           ),
         ),
       ),

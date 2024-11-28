@@ -220,7 +220,7 @@ class _ManutencaoExtintorPageState extends State<ManutencaoExtintorPage> {
           children: [
             DropdownButtonFormField<int>(
               value: idExtintor,
-              hint: Text("Selecione o Extintor"),
+              hint: Text("Selecione o Extintor", style: TextStyle(color: Color(0xFF011689))),
               onChanged: (int? newValue) {
                 setState(() {
                   idExtintor = newValue;
@@ -229,7 +229,7 @@ class _ManutencaoExtintorPageState extends State<ManutencaoExtintorPage> {
               items: extintores.map((extintor) {
                 return DropdownMenuItem<int>(
                   value: extintor['Patrimonio'],
-                  child: Text('Extintor ${extintor['Patrimonio']}'),
+                  child: Text('Extintor ${extintor['Patrimonio']}', style: TextStyle(color: Color(0xFF011689))),
                 );
               }).toList(),
             ),
@@ -238,27 +238,33 @@ class _ManutencaoExtintorPageState extends State<ManutencaoExtintorPage> {
               controller: descricaoController,
               decoration: InputDecoration(
                 labelText: 'Descrição da Manutenção',
+                labelStyle: TextStyle(color: Color(0xFF011689)),
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
               ),
+              style: TextStyle(color: Color(0xFF011689)), // Cor do texto
             ),
             SizedBox(height: 16),
             TextField(
               controller: responsavelController,
               decoration: InputDecoration(
                 labelText: 'Responsável pela Manutenção',
+                labelStyle: TextStyle(color: Color(0xFF011689)),
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
               ),
+              style: TextStyle(color: Color(0xFF011689)), // Cor do texto
             ),
             SizedBox(height: 16),
             TextField(
               controller: observacoesController,
               decoration: InputDecoration(
                 labelText: 'Observações',
+                labelStyle: TextStyle(color: Color(0xFF011689)),
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
               ),
+              style: TextStyle(color: Color(0xFF011689)), // Cor do texto
             ),
             SizedBox(height: 16),
             Row(

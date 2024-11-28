@@ -85,16 +85,16 @@ class _TelaReportarErroState extends State<TelaReportarErro> {
             Center(
               child: ElevatedButton(
                 onPressed: _enviarErro,
-                child: const Text(
-                  'Enviar Erro',
-                  style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 20), // Cor do texto do botão
-                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF011689), // Cor de fundo do botão
                   padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40), // Aumentando o tamanho do botão
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                ),
+                child: const Text(
+                  'Enviar Erro',
+                  style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 20), // Cor do texto do botão
                 ),
               ),
             ),
