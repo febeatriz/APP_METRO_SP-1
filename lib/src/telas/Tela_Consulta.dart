@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class TelaConsultaExtintor extends StatefulWidget {
   const TelaConsultaExtintor({Key? key}) : super(key: key);
@@ -44,7 +43,7 @@ class _TelaConsultaExtintorState extends State<TelaConsultaExtintor> {
 
     try {
       final url =
-          Uri.parse('http://localhost:3001/patrimonio'); // Ajuste o endereço
+          Uri.parse('http://10.0.2.2:3001/patrimonio'); // Ajuste o endereço
       print('URL para buscar patrimônios: $url'); // Log
 
       final response = await http.get(url);
@@ -105,7 +104,7 @@ class _TelaConsultaExtintorState extends State<TelaConsultaExtintor> {
       _errorMessage = "";
     });
 
-    final url = Uri.parse('http://localhost:3001/extintor/$_patrimonio');
+    final url = Uri.parse('http://10.0.2.2:3001/extintor/$_patrimonio');
 
     try {
       final response = await http.get(url);

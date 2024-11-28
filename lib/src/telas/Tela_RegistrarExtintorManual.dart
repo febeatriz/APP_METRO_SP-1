@@ -6,7 +6,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw; // Add this line
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart'; // Para usar o método rootBundle para carregar arquivos de forma assíncrona
 
 class TelaRegistrarExtintor extends StatefulWidget {
@@ -37,7 +36,6 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
   List<Map<String, dynamic>> linhas = [];
   List<Map<String, dynamic>> localizacoesFiltradas = [];
   List<Map<String, dynamic>> status = [];
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -47,11 +45,9 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
 
   Future<void> _fetchInitialData() async {
     setState(() {
-      _isLoading = true;
     });
     await Future.wait([fetchTipos(), fetchLinhas(), fetchStatus()]);
     setState(() {
-      _isLoading = false;
     });
   }
 
@@ -65,7 +61,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
       });
     } else {
       final response =
-          await http.get(Uri.parse('http://localhost:3001/tipos-extintores'));
+          await http.get(Uri.parse('http://10.0.2.2:3001/tipos-extintores'));
       if (response.statusCode == 200) {
         prefs.setString('tipos', response.body);
         setState(() {
@@ -77,7 +73,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
   }
 
   Future<void> fetchLinhas() async {
-    final response = await http.get(Uri.parse('http://localhost:3001/linhas'));
+    final response = await http.get(Uri.parse('http://10.0.2.2:3001/linhas'));
     if (response.statusCode == 200) {
       setState(() {
         linhas =
@@ -88,7 +84,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
 
   Future<void> fetchLocalizacoes(String linhaId) async {
     final response = await http
-        .get(Uri.parse('http://localhost:3001/localizacoes?linhaId=$linhaId'));
+        .get(Uri.parse('http://10.0.2.2:3001/localizacoes?linhaId=$linhaId'));
     if (response.statusCode == 200) {
       setState(() {
         localizacoesFiltradas =
@@ -98,7 +94,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
   }
 
   Future<void> fetchStatus() async {
-    final response = await http.get(Uri.parse('http://localhost:3001/status'));
+    final response = await http.get(Uri.parse('http://10.0.2.2:3001/status'));
     if (response.statusCode == 200) {
       setState(() {
         status =
@@ -149,7 +145,7 @@ class _TelaRegistrarExtintorState extends State<TelaRegistrarExtintor> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3001/registrar_extintor'),
+        Uri.parse('http://10.0.2.2:3001/registrar_extintor'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(extintorData),
       );
